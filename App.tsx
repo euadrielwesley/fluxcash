@@ -5,13 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import BalanceCard from './components/BalanceCard';
-import CashFlowChart from './components/CashFlowChart';
-import WeeklyBurnChart from './components/WeeklyBurnChart';
 import Alerts from './components/Alerts';
-import TopCategories from './components/TopCategories';
 import RecentTransactions from './components/RecentTransactions';
 import QuickAddModal from './components/QuickAddModal';
 import Gamification from './components/Gamification';
+import MonthlyReview from './components/MonthlyReview';
+import MissionsWidget from './components/MissionsWidget';
 import MonthlyReview from './components/MonthlyReview';
 import MissionsWidget from './components/MissionsWidget';
 import { ThemeProvider } from './components/ThemeContext';
@@ -39,6 +38,11 @@ const IncomePage = lazy(() => import('./components/IncomePage'));
 const IntegrationsPage = lazy(() => import('./components/IntegrationsPage'));
 const FluxOmni = lazy(() => import('./components/FluxOmni'));
 const OnboardingTour = lazy(() => import('./components/OnboardingTour'));
+
+// Lazy load Dashboard Widgets (Heavy Charts)
+const CashFlowChart = lazy(() => import('./components/CashFlowChart'));
+const WeeklyBurnChart = lazy(() => import('./components/WeeklyBurnChart'));
+const TopCategories = lazy(() => import('./components/TopCategories'));
 
 
 // --- STORY VIEWER ---
@@ -311,12 +315,18 @@ const AuthenticatedApp: React.FC = () => {
                   </div>
                 </section>
                 <section className="grid grid-cols-1 gap-6">
-                  <CashFlowChart />
+                  <Suspense fallback={<div className="h-[300px] w-full bg-slate-900/50 animate-pulse rounded-[2rem]"></div>}>
+                    <CashFlowChart />
+                  </Suspense>
                 </section>
                 <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <WeeklyBurnChart />
+                  <Suspense fallback={<div className="h-[200px] w-full bg-slate-900/50 animate-pulse rounded-[2rem]"></div>}>
+                    <WeeklyBurnChart />
+                  </Suspense>
                   <Alerts />
-                  <TopCategories />
+                  <Suspense fallback={<div className="h-[200px] w-full bg-slate-900/50 animate-pulse rounded-[2rem]"></div>}>
+                    <TopCategories />
+                  </Suspense>
                 </section>
                 <section className="mb-8">
                   <RecentTransactions onEdit={handleOpenEditModal} />
@@ -382,7 +392,9 @@ const AuthenticatedApp: React.FC = () => {
                 </div>
 
                 <div className="px-4">
-                  <CashFlowChart />
+                  <Suspense fallback={<div className="h-[200px] w-full bg-slate-900/50 animate-pulse rounded-[2rem]"></div>}>
+                    <CashFlowChart />
+                  </Suspense>
                 </div>
 
                 <div className="px-4">
@@ -390,8 +402,12 @@ const AuthenticatedApp: React.FC = () => {
                 </div>
 
                 <div className="px-4 grid grid-cols-1 gap-4">
-                  <WeeklyBurnChart />
-                  <TopCategories />
+                  <Suspense fallback={<div className="h-[150px] w-full bg-slate-900/50 animate-pulse rounded-[2rem]"></div>}>
+                    <WeeklyBurnChart />
+                  </Suspense>
+                  <Suspense fallback={<div className="h-[150px] w-full bg-slate-900/50 animate-pulse rounded-[2rem]"></div>}>
+                    <TopCategories />
+                  </Suspense>
                 </div>
 
                 <div className="pb-4">

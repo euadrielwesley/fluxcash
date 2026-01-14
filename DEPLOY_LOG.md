@@ -19,8 +19,10 @@
 9.  **Versão:** Package.json v1.1.0.
 10. **Git:** Sincronizado.
 
-## 🐛 Hotfixes Pós-Release
+## 🐛 Hotfixes & Melhorias Pós-Release
 - [x] **Fix:** Removido saldo fantasma de R$ 187,50 em contas novas. (Recalculado Teto de Gastos).
+- [x] **Perf:** Charts da Dashboard agora são carregados sob demanda (Lazy Load). ⚡
+- [x] **Perf:** Fontes e CSS externo agora carregam de forma assíncrona (Sem bloqueio de renderização). ⚡
 
 ---
 *Este arquivo confirma que a versão foi auditada e está aprovada para deploy.*
