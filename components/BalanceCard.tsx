@@ -31,7 +31,7 @@ const BalanceCard: React.FC<BalanceCardProps> = React.memo(({ onOpenModal }) => 
     const estimatedFixedCosts = transactions.filter(t => t.type === 'expense' && t.isRecurring).reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
     const freeCashFlow = Math.max(0, safeMonthlyIncome - estimatedFixedCosts);
-    const limit = freeCashFlow > 0 ? freeCashFlow / 4 : 750;
+    const limit = freeCashFlow > 0 ? freeCashFlow / 4 : 0;
 
     const available = limit - spent;
     const percent = limit > 0 ? Math.min(100, (spent / limit) * 100) : 100;
