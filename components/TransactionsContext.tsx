@@ -363,7 +363,76 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
     setCustomCategories(prev => [...prev, category]);
   };
   const exportData = (format: 'json' | 'csv') => { /* ... existing impl ... */ };
-  const resetData = async () => { /* ... existing impl ... */ };
+  const resetData = async () => {
+    if (!user) return;
+    if (isDemo) {
+      pushNotification({ title: 'Modo Demo', message: 'Dados de demonstração não podem ser apagados.', type: 'info' });
+      return;
+    }
+
+    setIsDataLoading(true);
+    try {
+      // 1. Delete all user data from Supabase
+      // Note: RLS policies ensure we only delete our own data
+      await Promise.all([
+        supabase.from('transactions').delete().eq('user_id', user.id),
+        supabase.from('credit_cards').delete().eq('user_id', user.id),
+        supabase.from('financial_goals').delete().eq('user_id', user.id),
+        supabase.from('debts').delete().eq('user_id', user.id),
+        supabase.from('ai_rules').delete().eq('user_id', user.id),
+        supabase.from('custom_categories').delete().eq('user_id', user.id),
+        supabase.from('xp_history').delete().eq('user_id', user.id),
+        supabase.from('user_achievements').delete().eq('user_id', user.id),
+        supabase.from('weekly_challenges').delete().eq('user_id', user.id),
+        supabase.from('streaks').delete().eq('user_id', user.id)
+      ]);
+
+      // 2. Reset Profile Stats (keep account)
+      await supabase.from('profiles').update({
+        xp: 0,
+        level: 1,
+        main_goal: null,
+        current_situation: null
+      }).eq('user_id', user.id);
+
+      // 3. Clear Local State
+      setTransactions([]);
+      setCards([]);
+      setGoals([]);
+      setDebts([]);
+      setAiRules([]);
+      setCustomCategories(DEFAULT_CATEGORIES);
+      setCompletedMissions([]);
+      if (localProfile) {
+        setLocalProfile({ ...localProfile, xp: 0, level: 1 });
+      }
+
+      // 4. Clear Cache
+      localStorage.removeItem(`flux_tx_${user.id}`);
+      localStorage.removeItem(`flux_cards_${user.id}`);
+      localStorage.removeItem(`flux_goals_${user.id}`);
+      localStorage.removeItem(`flux_debts_${user.id}`);
+      localStorage.removeItem(`flux_profile_${user.id}`);
+
+      pushNotification({
+        title: 'Dados Apagados',
+        message: 'Sua conta foi limpa com sucesso. Comece do zero!',
+        type: 'success',
+        category: 'system'
+      });
+
+    } catch (error) {
+      console.error('Error resetting data:', error);
+      pushNotification({
+        title: 'Erro no Reset',
+        message: 'Ocorreu um erro ao tentar apagar os dados.',
+        type: 'error',
+        category: 'system'
+      });
+    } finally {
+      setIsDataLoading(false);
+    }
+  };
 
   const nextMonth = useCallback(() => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)), []);
   const prevMonth = useCallback(() => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1)), []);
