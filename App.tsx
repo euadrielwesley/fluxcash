@@ -324,13 +324,16 @@ const AuthenticatedApp: React.FC = () => {
             )}
             {/* ... other desktop views ... */}
             {currentView === 'gamification' && <div className="overflow-y-auto no-scrollbar h-full"><Gamification /></div>}
-            {currentView === 'transactions' && <TransactionsPage onBack={() => setCurrentView('dashboard')} onMenuClick={() => setSidebarOpen(true)} onEdit={handleOpenEditModal} />}
-            {currentView === 'wallet' && <WalletPage onBack={() => setCurrentView('dashboard')} onMenuClick={() => setSidebarOpen(true)} />}
-            {currentView === 'analytics' && <AnalyticsPage onBack={() => setCurrentView('dashboard')} onMenuClick={() => setSidebarOpen(true)} />}
-            {currentView === 'settings' && <SettingsPage onBack={() => setCurrentView('dashboard')} onMenuClick={() => setSidebarOpen(true)} initialTab={initialSettingsTab} onNavigateToIntegrations={() => setCurrentView('integrations')} />}
-            {currentView === 'expenses' && <ExpensesPage onBack={() => setCurrentView('dashboard')} onMenuClick={() => setSidebarOpen(true)} />}
-            {currentView === 'income' && <IncomePage onBack={() => setCurrentView('dashboard')} onMenuClick={() => setSidebarOpen(true)} onAddClick={handleOpenAddModal} />}
-            {currentView === 'integrations' && <IntegrationsPage onBack={() => setCurrentView('settings')} onMenuClick={() => setSidebarOpen(true)} />}
+
+            <Suspense fallback={<PageLoader />}>
+              {currentView === 'transactions' && <TransactionsPage onBack={() => setCurrentView('dashboard')} onMenuClick={() => setSidebarOpen(true)} onEdit={handleOpenEditModal} />}
+              {currentView === 'wallet' && <WalletPage onBack={() => setCurrentView('dashboard')} onMenuClick={() => setSidebarOpen(true)} />}
+              {currentView === 'analytics' && <AnalyticsPage onBack={() => setCurrentView('dashboard')} onMenuClick={() => setSidebarOpen(true)} />}
+              {currentView === 'settings' && <SettingsPage onBack={() => setCurrentView('dashboard')} onMenuClick={() => setSidebarOpen(true)} initialTab={initialSettingsTab} onNavigateToIntegrations={() => setCurrentView('integrations')} />}
+              {currentView === 'expenses' && <ExpensesPage onBack={() => setCurrentView('dashboard')} onMenuClick={() => setSidebarOpen(true)} />}
+              {currentView === 'income' && <IncomePage onBack={() => setCurrentView('dashboard')} onMenuClick={() => setSidebarOpen(true)} onAddClick={handleOpenAddModal} />}
+              {currentView === 'integrations' && <IntegrationsPage onBack={() => setCurrentView('settings')} onMenuClick={() => setSidebarOpen(true)} />}
+            </Suspense>
           </main>
         </div>
       </div>
