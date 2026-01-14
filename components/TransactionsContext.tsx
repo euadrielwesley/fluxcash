@@ -73,7 +73,7 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
     if (user) setLocalProfile(user);
   }, [user]);
 
-  // --- FETCH DATA (SUPABASE ONLY - NO MOCK DATA) ---
+  // STALE-WHILE-REVALIDATE PATTERN
   useEffect(() => {
     if (!user) {
       setTransactions([]);
@@ -83,7 +83,7 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
       return;
     }
 
-    // DEMO MODE: Start with empty data (no mock)
+    // DEMO MODE
     if (isDemo) {
       setIsDataLoading(true);
       setTimeout(() => {
@@ -93,19 +93,35 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
         setDebts([]);
         setAiRules([]);
         setIsDataLoading(false);
-      }, 300); // Reduced timeout for faster loading
+      }, 300);
       return;
     }
 
-    // PRODUCTION MODE
-    const fetchData = async () => {
-      // Don't block UI if we already have some data (optimistic update support)
+    // PRODUCTION: Load Cache -> Then Fetch
+    const loadData = async () => {
+      // 1. Load from Cache (Instant)
+      try {
+        const cachedTx = localStorage.getItem(`flux_tx_${user.id}`);
+        const cachedCards = localStorage.getItem(`flux_cards_${user.id}`);
+        const cachedGoals = localStorage.getItem(`flux_goals_${user.id}`);
+        const cachedDebts = localStorage.getItem(`flux_debts_${user.id}`);
+        const cachedProfile = localStorage.getItem(`flux_profile_${user.id}`);
+
+        if (cachedTx) setTransactions(JSON.parse(cachedTx));
+        if (cachedCards) setCards(JSON.parse(cachedCards));
+        if (cachedGoals) setGoals(JSON.parse(cachedGoals));
+        if (cachedDebts) setDebts(JSON.parse(cachedDebts));
+        if (cachedProfile) setLocalProfile(JSON.parse(cachedProfile));
+      } catch (e) {
+        console.warn('Cache error', e);
+      }
+
+      // 2. Background Fetch (Single Single Source of Truth)
       if (transactions.length === 0) setIsDataLoading(true);
 
       try {
-        // Parallel fetching for speed
         const [txRes, cardsRes, goalsRes, debtsRes, rulesRes, profileRes] = await Promise.all([
-          supabase.from('transactions').select('*').order('date_iso', { ascending: false }).limit(200), // Limit initial load
+          supabase.from('transactions').select('*').order('date_iso', { ascending: false }).limit(300),
           supabase.from('credit_cards').select('*'),
           supabase.from('financial_goals').select('*'),
           supabase.from('debts').select('*'),
@@ -114,43 +130,53 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
         ]);
 
         if (txRes.data) {
-          setTransactions(txRes.data.map(t => ({
+          const mappedTx = txRes.data.map(t => ({
             id: t.id, title: t.title, amount: Number(t.amount), type: t.type, category: t.category, account: t.account, dateIso: t.date_iso, isRecurring: t.is_recurring, installment: t.installment, icon: t.icon, colorClass: t.color_class
-          })));
+          }));
+          setTransactions(mappedTx);
+          localStorage.setItem(`flux_tx_${user.id}`, JSON.stringify(mappedTx));
         }
 
         if (cardsRes.data) {
-          setCards(cardsRes.data.map(c => ({
+          const mappedCards = cardsRes.data.map(c => ({
             id: c.id, name: c.name, brand: c.brand, limit: Number(c.limit), bill: Number(c.bill), color: c.color, dueDate: c.due_date, lastDigits: c.last_digits
-          })));
+          }));
+          setCards(mappedCards);
+          localStorage.setItem(`flux_cards_${user.id}`, JSON.stringify(mappedCards));
         }
 
         if (goalsRes.data) {
-          setGoals(goalsRes.data.map(g => ({
+          const mappedGoals = goalsRes.data.map(g => ({
             id: g.id, name: g.name, target: Number(g.target), current: Number(g.current), deadline: g.deadline, icon: g.icon, color: g.color
-          })));
+          }));
+          setGoals(mappedGoals);
+          localStorage.setItem(`flux_goals_${user.id}`, JSON.stringify(mappedGoals));
         }
 
         if (debtsRes.data) {
-          setDebts(debtsRes.data.map(d => ({
+          const mappedDebts = debtsRes.data.map(d => ({
             id: d.id, name: d.name, bank: d.bank, total_installments: d.total_installments, paid_installments: d.paid_installments, original_debt: Number(d.original_debt), current_balance: Number(d.current_balance), value_parcel: Number(d.value_parcel), color: d.color
-          })));
+          }));
+          setDebts(mappedDebts);
+          localStorage.setItem(`flux_debts_${user.id}`, JSON.stringify(mappedDebts));
         }
 
         if (rulesRes.data) setAiRules(rulesRes.data);
 
         if (profileRes.data) {
-          setLocalProfile(prev => ({ ...prev!, xp: profileRes.data.xp, level: profileRes.data.level, hasOnboarding: profileRes.data.has_onboarding }));
+          const updatedProfile = { ...localProfile!, xp: profileRes.data.xp, level: profileRes.data.level, hasOnboarding: profileRes.data.has_onboarding, plan: { ...localProfile?.plan, name: profileRes.data.plan_name || 'Free' } };
+          setLocalProfile(updatedProfile);
+          localStorage.setItem(`flux_profile_${user.id}`, JSON.stringify(updatedProfile));
         }
 
-      } catch (error: any) {
-        console.error("Supabase Fetch Error:", error);
+      } catch (error) {
+        console.error("Supabase Sync Error:", error);
       } finally {
         setIsDataLoading(false);
       }
     };
 
-    fetchData();
+    loadData();
   }, [user, isDemo]);
 
   // --- ACTIONS ---
