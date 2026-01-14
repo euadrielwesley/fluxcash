@@ -47,15 +47,8 @@ const Alerts: React.FC = () => {
       });
     }
 
-    // 4. Smart: Subscription Check
-    list.push({
-      id: 'sub_check',
-      type: 'info',
-      title: 'Netflix subiu',
-      desc: 'Sua assinatura aumentou R$ 5,00 este mês.',
-      action: 'Confirmar',
-      icon: 'subscriptions'
-    });
+    // 4. Smart: Subscription Check - REMOVED HARDCODED DATA
+    // if needed in future, implement real logic comparing recurring expenses
 
     return list.filter(i => !dismissed.includes(i.id));
   };
@@ -67,7 +60,7 @@ const Alerts: React.FC = () => {
   };
 
   const getStyles = (type: string) => {
-    switch(type) {
+    switch (type) {
       case 'critical': return 'bg-rose-50 dark:bg-rose-900/20 border-rose-100 dark:border-rose-900/30 text-rose-700 dark:text-rose-300';
       case 'warning': return 'bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-900/30 text-amber-700 dark:text-amber-300';
       case 'opportunity': return 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-100 dark:border-indigo-900/30 text-indigo-700 dark:text-indigo-300';
@@ -91,22 +84,22 @@ const Alerts: React.FC = () => {
     <div className="bg-white dark:bg-[#18181b] rounded-2xl p-6 shadow-soft dark:shadow-none border border-zinc-200 dark:border-zinc-800 flex flex-col h-full transition-colors">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-base font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
-           <span className="material-symbols-outlined text-amber-500 filled">lightbulb</span>
-           Insights
-           <span className="bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 text-[10px] px-1.5 py-0.5 rounded-full">{insights.length}</span>
+          <span className="material-symbols-outlined text-amber-500 filled">lightbulb</span>
+          Insights
+          <span className="bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 text-[10px] px-1.5 py-0.5 rounded-full">{insights.length}</span>
         </h3>
       </div>
-      
+
       <div className="flex flex-col gap-3 overflow-y-auto no-scrollbar max-h-[250px] pr-1">
         {insights.map(item => (
           <div key={item.id} className={`p-3 rounded-xl border relative group transition-all hover:shadow-md ${getStyles(item.type)}`}>
-            <button 
+            <button
               onClick={() => handleDismiss(item.id)}
               className="absolute top-2 right-2 opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-opacity"
             >
               <span className="material-symbols-outlined text-[16px]">close</span>
             </button>
-            
+
             <div className="flex gap-3">
               <div className={`mt-0.5 p-1.5 rounded-lg bg-white/50 dark:bg-black/20 shrink-0 h-fit`}>
                 <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
