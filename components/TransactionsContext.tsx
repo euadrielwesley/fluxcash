@@ -209,9 +209,9 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
     return d.getMonth() === currentDate.getMonth() && d.getFullYear() === currentDate.getFullYear();
   };
 
-  const income = transactions.filter(t => t.type === 'income' && isSameMonth(t.dateIso)).reduce((acc, t) => acc + t.amount, 0);
-  const expenses = transactions.filter(t => t.type === 'expense' && isSameMonth(t.dateIso)).reduce((acc, t) => acc + Math.abs(t.amount), 0);
-  const balance = transactions.reduce((acc, t) => acc + t.amount, 0);
+  const income = useMemo(() => transactions.filter(t => t.type === 'income' && isSameMonth(t.dateIso)).reduce((acc, t) => acc + t.amount, 0), [transactions, currentDate]);
+  const expenses = useMemo(() => transactions.filter(t => t.type === 'expense' && isSameMonth(t.dateIso)).reduce((acc, t) => acc + Math.abs(t.amount), 0), [transactions, currentDate]);
+  const balance = useMemo(() => transactions.reduce((acc, t) => acc + t.amount, 0), [transactions]);
 
   const activeMissions = useMemo(() => {
     const missions: Mission[] = [];
