@@ -165,17 +165,9 @@ const AuthenticatedApp: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  // Skeleton Loading for Dashboard
-  if (isDataLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background-light dark:bg-[#09090b]">
-        <div className="flex flex-col items-center gap-4">
-          <span className="material-symbols-outlined text-4xl text-primary animate-spin">sync</span>
-          <p className="text-sm font-bold text-zinc-500 animate-pulse">Sincronizando dados...</p>
-        </div>
-      </div>
-    );
-  }
+  // Skeleton Loading handled by individual components or context transparency
+  // if (isDataLoading) { ... } -> Removed blocking return to allow UI to mount
+
 
   // --- MOBILE COMPONENTS ---
 

@@ -99,42 +99,57 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
 
     // PRODUCTION MODE
     const fetchData = async () => {
-      setIsDataLoading(true);
+      // Don't block UI if we already have some data (optimistic update support)
+      if (transactions.length === 0) setIsDataLoading(true);
+
       try {
-        const { data: txData, error: txError } = await supabase.from('transactions').select('*').order('date_iso', { ascending: false });
-        if (txError) throw txError;
-        setTransactions((txData || []).map(t => ({
-          id: t.id, title: t.title, amount: Number(t.amount), type: t.type, category: t.category, account: t.account, dateIso: t.date_iso, isRecurring: t.is_recurring, installment: t.installment, icon: t.icon, colorClass: t.color_class
-        })));
+        // Parallel fetching for speed
+        const [txRes, cardsRes, goalsRes, debtsRes, rulesRes, profileRes] = await Promise.all([
+          supabase.from('transactions').select('*').order('date_iso', { ascending: false }).limit(200), // Limit initial load
+          supabase.from('credit_cards').select('*'),
+          supabase.from('financial_goals').select('*'),
+          supabase.from('debts').select('*'),
+          supabase.from('ai_rules').select('*'),
+          supabase.from('profiles').select('*').eq('id', user.id).single()
+        ]);
 
-        const { data: cardsData } = await supabase.from('credit_cards').select('*');
-        setCards((cardsData || []).map(c => ({
-          id: c.id, name: c.name, brand: c.brand, limit: Number(c.limit), bill: Number(c.bill), color: c.color, dueDate: c.due_date, lastDigits: c.last_digits
-        })));
-
-        const { data: goalsData } = await supabase.from('financial_goals').select('*');
-        setGoals((goalsData || []).map(g => ({
-          id: g.id, name: g.name, target: Number(g.target), current: Number(g.current), deadline: g.deadline, icon: g.icon, color: g.color
-        })));
-
-        const { data: debtsData } = await supabase.from('debts').select('*');
-        setDebts((debtsData || []).map(d => ({
-          id: d.id, name: d.name, bank: d.bank, total_installments: d.total_installments, paid_installments: d.paid_installments, original_debt: Number(d.original_debt), current_balance: Number(d.current_balance), value_parcel: Number(d.value_parcel), color: d.color
-        })));
-
-        const { data: rulesData } = await supabase.from('ai_rules').select('*');
-        if (rulesData) setAiRules(rulesData);
-
-        const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-        if (profileData) {
-          setLocalProfile(prev => ({ ...prev!, xp: profileData.xp, level: profileData.level, hasOnboarding: profileData.has_onboarding }));
+        if (txRes.data) {
+          setTransactions(txRes.data.map(t => ({
+            id: t.id, title: t.title, amount: Number(t.amount), type: t.type, category: t.category, account: t.account, dateIso: t.date_iso, isRecurring: t.is_recurring, installment: t.installment, icon: t.icon, colorClass: t.color_class
+          })));
         }
+
+        if (cardsRes.data) {
+          setCards(cardsRes.data.map(c => ({
+            id: c.id, name: c.name, brand: c.brand, limit: Number(c.limit), bill: Number(c.bill), color: c.color, dueDate: c.due_date, lastDigits: c.last_digits
+          })));
+        }
+
+        if (goalsRes.data) {
+          setGoals(goalsRes.data.map(g => ({
+            id: g.id, name: g.name, target: Number(g.target), current: Number(g.current), deadline: g.deadline, icon: g.icon, color: g.color
+          })));
+        }
+
+        if (debtsRes.data) {
+          setDebts(debtsRes.data.map(d => ({
+            id: d.id, name: d.name, bank: d.bank, total_installments: d.total_installments, paid_installments: d.paid_installments, original_debt: Number(d.original_debt), current_balance: Number(d.current_balance), value_parcel: Number(d.value_parcel), color: d.color
+          })));
+        }
+
+        if (rulesRes.data) setAiRules(rulesRes.data);
+
+        if (profileRes.data) {
+          setLocalProfile(prev => ({ ...prev!, xp: profileRes.data.xp, level: profileRes.data.level, hasOnboarding: profileRes.data.has_onboarding }));
+        }
+
       } catch (error: any) {
         console.error("Supabase Fetch Error:", error);
       } finally {
         setIsDataLoading(false);
       }
     };
+
     fetchData();
   }, [user, isDemo]);
 
