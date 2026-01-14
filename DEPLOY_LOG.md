@@ -19,5 +19,8 @@
 9.  **Versão:** Package.json v1.1.0.
 10. **Git:** Sincronizado.
 
+## 🐛 Hotfixes Pós-Release
+- [x] **Fix:** Removido saldo fantasma de R$ 187,50 em contas novas. (Recalculado Teto de Gastos).
+
 ---
 *Este arquivo confirma que a versão foi auditada e está aprovada para deploy.*
