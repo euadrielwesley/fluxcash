@@ -99,22 +99,33 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
 
     // PRODUCTION: Load Cache -> Then Fetch
     const loadData = async () => {
-      // 1. Load from Cache (Instant)
-      try {
-        const cachedTx = localStorage.getItem(`flux_tx_${user.id}`);
-        const cachedCards = localStorage.getItem(`flux_cards_${user.id}`);
-        const cachedGoals = localStorage.getItem(`flux_goals_${user.id}`);
-        const cachedDebts = localStorage.getItem(`flux_debts_${user.id}`);
-        const cachedProfile = localStorage.getItem(`flux_profile_${user.id}`);
+      // 1. Optimized Cache Loading (Non-Blocking)
+      const loadCache = () => {
+        try {
+          const cachedTx = localStorage.getItem(`flux_tx_${user.id}`);
+          if (cachedTx) {
+            // Defer parsing to next tick to avoid blocking main thread
+            setTimeout(() => setTransactions(JSON.parse(cachedTx)), 0);
+          }
 
-        if (cachedTx) setTransactions(JSON.parse(cachedTx));
-        if (cachedCards) setCards(JSON.parse(cachedCards));
-        if (cachedGoals) setGoals(JSON.parse(cachedGoals));
-        if (cachedDebts) setDebts(JSON.parse(cachedDebts));
-        if (cachedProfile) setLocalProfile(JSON.parse(cachedProfile));
-      } catch (e) {
-        console.warn('Cache error', e);
-      }
+          // Load other items in background
+          setTimeout(() => {
+            const cachedCards = localStorage.getItem(`flux_cards_${user.id}`);
+            const cachedGoals = localStorage.getItem(`flux_goals_${user.id}`);
+            const cachedDebts = localStorage.getItem(`flux_debts_${user.id}`);
+            const cachedProfile = localStorage.getItem(`flux_profile_${user.id}`);
+
+            if (cachedCards) setCards(JSON.parse(cachedCards));
+            if (cachedGoals) setGoals(JSON.parse(cachedGoals));
+            if (cachedDebts) setDebts(JSON.parse(cachedDebts));
+            if (cachedProfile) setLocalProfile(JSON.parse(cachedProfile));
+          }, 50);
+        } catch (e) {
+          console.warn('Cache error', e);
+        }
+      };
+
+      loadCache();
 
       // 2. Background Fetch (Single Single Source of Truth)
       if (transactions.length === 0) setIsDataLoading(true);
