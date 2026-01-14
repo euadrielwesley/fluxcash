@@ -436,11 +436,15 @@ const AuthenticatedApp: React.FC = () => {
 const AuthGate: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
 
-  if (isLoading) {
-    return <div className="h-screen w-full flex items-center justify-center bg-background-light dark:bg-[#09090b]"><span className="material-symbols-outlined animate-spin text-primary text-4xl">bolt</span></div>;
-  }
+  return (
+    <div className="h-screen w-full flex flex-col items-center justify-center bg-background-light dark:bg-[#09090b] gap-4">
+      <span className="material-symbols-outlined animate-spin text-primary text-4xl">bolt</span>
+      <p className="text-sm font-bold text-zinc-500 animate-pulse">Iniciando sistema...</p>
+    </div>
+  );
+}
 
-  return isAuthenticated ? <AuthenticatedApp /> : <LoginPage />;
+return isAuthenticated ? <AuthenticatedApp /> : <LoginPage />;
 };
 
 const App: React.FC = () => {

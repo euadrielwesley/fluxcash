@@ -43,11 +43,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           xp: profile.xp || 0,
           level: profile.level || 1,
           profession: profile.profession || 'Explorador',
-          plan: { 
-              name: profile.plan_name || 'Free', 
-              status: 'active', 
-              renewalDate: new Date().toISOString(), 
-              price: profile.plan_name === 'Obsidian Pro' ? 29.90 : 0 
+          plan: {
+            name: profile.plan_name || 'Free',
+            status: 'active',
+            renewalDate: new Date().toISOString(),
+            price: profile.plan_name === 'Obsidian Pro' ? 29.90 : 0
           },
           hasOnboarding: profile.has_onboarding
         } as UserProfile;
@@ -55,34 +55,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (e) {
       console.warn('Error fetching profile:', e);
     }
-    
+
     // Fallback if profile fetch fails but auth is valid
     return {
-        id: sessionUser.id,
-        name: sessionUser.email?.split('@')[0] || 'User',
-        email: sessionUser.email!,
-        avatarUrl: `https://ui-avatars.com/api/?name=User`,
-        xp: 0,
-        level: 1,
-        profession: 'N/A',
-        plan: { name: 'Free', status: 'active', renewalDate: new Date().toISOString(), price: 0 },
-        hasOnboarding: false
+      id: sessionUser.id,
+      name: sessionUser.email?.split('@')[0] || 'User',
+      email: sessionUser.email!,
+      avatarUrl: `https://ui-avatars.com/api/?name=User`,
+      xp: 0,
+      level: 1,
+      profession: 'N/A',
+      plan: { name: 'Free', status: 'active', renewalDate: new Date().toISOString(), price: 0 },
+      hasOnboarding: false
     } as UserProfile;
   };
 
   useEffect(() => {
-    // 1. Check active session on mount
+    // 1. Check active session on mount with timeout safety
     const checkSession = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Enforce a timeout to prevent infinite loading screen
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<{ data: { session: null }, error: any }>((_, reject) =>
+          setTimeout(() => reject(new Error('Auth timeout')), 7000)
+        );
+
+        const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+
         if (error) throw error;
-        
+
         if (session?.user) {
           const profile = await formatUser(session.user);
           setUser(profile);
         }
       } catch (error) {
-        console.error('Session check failed', error);
+        console.error('Session check failed or timeout:', error);
       } finally {
         setIsLoading(false);
       }
@@ -126,28 +133,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const loginDemo = async () => {
     setIsLoading(true);
     await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network
-    
+
     const demoUser: UserProfile = {
-        id: 'demo-user-123',
-        name: 'Usuário Demo',
-        email: 'demo@fluxcash.ai',
-        avatarUrl: 'https://ui-avatars.com/api/?name=Demo+User&background=random&color=fff&background=7c3aed',
-        xp: 2450,
-        level: 5,
-        profession: 'Tester',
-        plan: { name: 'Obsidian Pro', status: 'active', renewalDate: new Date().toISOString(), price: 29.90 },
-        hasOnboarding: false // Trigger onboarding for demo
+      id: 'demo-user-123',
+      name: 'Usuário Demo',
+      email: 'demo@fluxcash.ai',
+      avatarUrl: 'https://ui-avatars.com/api/?name=Demo+User&background=random&color=fff&background=7c3aed',
+      xp: 2450,
+      level: 5,
+      profession: 'Tester',
+      plan: { name: 'Obsidian Pro', status: 'active', renewalDate: new Date().toISOString(), price: 29.90 },
+      hasOnboarding: false // Trigger onboarding for demo
     };
-    
+
     setIsDemo(true);
     setUser(demoUser);
     setIsLoading(false);
-    
+
     pushNotification({
-        title: 'Modo Demonstração',
-        message: 'Você está em um ambiente local. Dados não serão salvos na nuvem.',
-        type: 'info',
-        category: 'system'
+      title: 'Modo Demonstração',
+      message: 'Você está em um ambiente local. Dados não serão salvos na nuvem.',
+      type: 'info',
+      category: 'system'
     });
   };
 
@@ -163,12 +170,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
 
       if (error) throw new Error(error.message);
-      
+
       pushNotification({
-          title: 'Conta Criada!',
-          message: 'Verifique seu email se necessário ou faça login.',
-          type: 'success',
-          category: 'system'
+        title: 'Conta Criada!',
+        message: 'Verifique seu email se necessário ou faça login.',
+        type: 'success',
+        category: 'system'
       });
     } catch (err) {
       setIsLoading(false);
@@ -178,11 +185,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     if (isDemo) {
-        setIsDemo(false);
-        setUser(null);
+      setIsDemo(false);
+      setUser(null);
     } else {
-        await supabase.auth.signOut();
-        setUser(null);
+      await supabase.auth.signOut();
+      setUser(null);
     }
     localStorage.clear();
     window.location.reload();
