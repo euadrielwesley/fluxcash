@@ -1,16 +1,16 @@
 
 import React, { useMemo } from 'react';
-import { 
-  ComposedChart, 
-  Bar, 
-  Line, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  Cell 
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell
 } from 'recharts';
 import { useTransactions } from './TransactionsContext';
 
@@ -51,7 +51,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const CashFlowChart: React.FC = () => {
+const CashFlowChart: React.FC = React.memo(() => {
   const { transactions, privacyMode } = useTransactions();
 
   // Aggregate data by month
@@ -89,7 +89,7 @@ const CashFlowChart: React.FC = () => {
           </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">Análise de performance financeira anual</p>
         </div>
-        
+
         <div className="flex items-center gap-6 bg-zinc-50 dark:bg-zinc-900 p-2 rounded-2xl border border-zinc-100 dark:border-zinc-800">
           <div className="flex items-center gap-2 px-2">
             <div className="size-3 rounded-full bg-gradient-to-t from-primary to-emerald-300"></div>
@@ -108,103 +108,102 @@ const CashFlowChart: React.FC = () => {
 
       <div className={`h-80 w-full relative transition-all duration-500 ${privacyMode ? 'blur-lg opacity-50 scale-[0.98]' : ''}`}>
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart 
-            data={chartData} 
+          <ComposedChart
+            data={chartData}
             margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
             barGap={12}
           >
             <defs>
               <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#059669" stopOpacity={1}/>
-                <stop offset="95%" stopColor="#059669" stopOpacity={0.6}/>
+                <stop offset="5%" stopColor="#059669" stopOpacity={1} />
+                <stop offset="95%" stopColor="#059669" stopOpacity={0.6} />
               </linearGradient>
               <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f43f5e" stopOpacity={1}/>
-                <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.6}/>
+                <stop offset="5%" stopColor="#f43f5e" stopOpacity={1} />
+                <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.6} />
               </linearGradient>
               <linearGradient id="colorArea" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#059669" stopOpacity={0.05}/>
-                <stop offset="95%" stopColor="#059669" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#059669" stopOpacity={0.05} />
+                <stop offset="95%" stopColor="#059669" stopOpacity={0} />
               </linearGradient>
             </defs>
-            
+
             <CartesianGrid vertical={false} stroke="var(--grid-stroke)" strokeDasharray="8 8" className="stroke-zinc-100 dark:stroke-zinc-800" />
-            
-            <XAxis 
-              dataKey="month" 
-              axisLine={false} 
-              tickLine={false} 
+
+            <XAxis
+              dataKey="month"
+              axisLine={false}
+              tickLine={false}
               tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 700 }}
               dy={15}
             />
-            
-            <YAxis 
-              axisLine={false} 
-              tickLine={false} 
+
+            <YAxis
+              axisLine={false}
+              tickLine={false}
               tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 600 }}
-              tickFormatter={(value) => `R$ ${value/1000}k`}
+              tickFormatter={(value) => `R$ ${value / 1000}k`}
             />
 
             {!privacyMode && (
-                <Tooltip 
-                cursor={{ fill: 'var(--tooltip-cursor)', radius: 12 }} 
+              <Tooltip
+                cursor={{ fill: 'var(--tooltip-cursor)', radius: 12 }}
                 content={<CustomTooltip />}
-                />
+              />
             )}
 
-            <Area 
-              type="monotone" 
-              dataKey="entradas" 
-              stroke="none" 
-              fill="url(#colorArea)" 
+            <Area
+              type="monotone"
+              dataKey="entradas"
+              stroke="none"
+              fill="url(#colorArea)"
               tooltipType="none"
             />
 
-            <Bar 
-              dataKey="entradas" 
-              fill="url(#colorEntradas)" 
-              radius={[6, 6, 2, 2]} 
+            <Bar
+              dataKey="entradas"
+              fill="url(#colorEntradas)"
+              radius={[6, 6, 2, 2]}
               barSize={24}
               animationDuration={1500}
             >
               {chartData.map((entry, index) => (
-                <Cell 
-                  key={`cell-in-${index}`} 
-                  fillOpacity={index === new Date().getMonth() ? 1 : 0.4} 
-                  className="transition-all duration-300 hover:fill-opacity-100"
-                />
-              ))}
-            </Bar>
-
-            <Bar 
-              dataKey="saidas" 
-              fill="url(#colorSaidas)" 
-              radius={[6, 6, 2, 2]} 
-              barSize={24}
-              animationDuration={1500}
-            >
-              {chartData.map((entry, index) => (
-                <Cell 
-                  key={`cell-out-${index}`} 
+                <Cell
+                  key={`cell-in-${index}`}
                   fillOpacity={index === new Date().getMonth() ? 1 : 0.4}
                   className="transition-all duration-300 hover:fill-opacity-100"
                 />
               ))}
             </Bar>
 
-            <Line 
-              type="monotone" 
-              dataKey="saldo" 
-              stroke="#3b82f6" 
-              strokeWidth={4} 
+            <Bar
+              dataKey="saidas"
+              fill="url(#colorSaidas)"
+              radius={[6, 6, 2, 2]}
+              barSize={24}
+              animationDuration={1500}
+            >
+              {chartData.map((entry, index) => (
+                <Cell
+                  key={`cell-out-${index}`}
+                  fillOpacity={index === new Date().getMonth() ? 1 : 0.4}
+                  className="transition-all duration-300 hover:fill-opacity-100"
+                />
+              ))}
+            </Bar>
+
+            <Line
+              type="monotone"
+              dataKey="saldo"
+              stroke="#3b82f6"
+              strokeWidth={4}
               dot={{ r: 4, fill: '#3b82f6', strokeWidth: 2, stroke: '#fff' }}
               activeDot={{ r: 6, strokeWidth: 0 }}
               animationDuration={2000}
-              shadow="0 4px 10px rgba(59, 130, 246, 0.5)"
             />
           </ComposedChart>
         </ResponsiveContainer>
-        
+
         {/* CSS Var Injection for Chart Colors Adaptation */}
         <style>{`
           .dark {
@@ -217,17 +216,17 @@ const CashFlowChart: React.FC = () => {
           }
         `}</style>
       </div>
-      
+
       {privacyMode && (
-          <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-              <span className="bg-slate-900/80 text-white px-4 py-2 rounded-full font-bold text-sm backdrop-blur-sm border border-white/10">
-                  <span className="material-symbols-outlined align-middle mr-2 text-[16px]">visibility_off</span>
-                  Visão Protegida
-              </span>
-          </div>
+        <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
+          <span className="bg-slate-900/80 text-white px-4 py-2 rounded-full font-bold text-sm backdrop-blur-sm border border-white/10">
+            <span className="material-symbols-outlined align-middle mr-2 text-[16px]">visibility_off</span>
+            Visão Protegida
+          </span>
+        </div>
       )}
     </div>
   );
-};
+});
 
 export default CashFlowChart;

@@ -24,6 +24,7 @@ import ToastContainer from './components/ToastContainer';
 import NotificationPanel from './components/NotificationPanel';
 import ThemeToggle from './components/ThemeToggle';
 import LoginPage from './components/LoginPage';
+import ErrorBoundary from './components/ErrorBoundary';
 import { Transaction, ViewType, Story } from './types';
 import InstallPromptBanner from './components/InstallPromptBanner';
 import PageLoader from './components/PageLoader';
@@ -146,25 +147,25 @@ const AuthenticatedApp: React.FC = () => {
     return stories;
   }, [transactions, balance, userProfile]);
 
-  const handleGamificationClick = () => {
+  const handleGamificationClick = useCallback(() => {
     setInitialSettingsTab('gamification');
     setCurrentView('settings');
-  };
+  }, []);
 
-  const handleNavigateToSettings = (tab: string) => {
+  const handleNavigateToSettings = useCallback((tab: string) => {
     setInitialSettingsTab(tab);
     setCurrentView('settings');
-  };
+  }, []);
 
-  const handleOpenAddModal = () => {
+  const handleOpenAddModal = useCallback(() => {
     setTransactionToEdit(null);
     setIsModalOpen(true);
-  };
+  }, []);
 
-  const handleOpenEditModal = (transaction: Transaction) => {
+  const handleOpenEditModal = useCallback((transaction: Transaction) => {
     setTransactionToEdit(transaction);
     setIsModalOpen(true);
-  };
+  }, []);
 
   // Skeleton Loading handled by individual components or context transparency
   // if (isDataLoading) { ... } -> Removed blocking return to allow UI to mount
@@ -452,7 +453,7 @@ const AuthGate: React.FC = () => {
   return isAuthenticated ? <AuthenticatedApp /> : <LoginPage />;
 };
 
-import ErrorBoundary from './components/ErrorBoundary';
+
 
 const App: React.FC = () => {
   return (

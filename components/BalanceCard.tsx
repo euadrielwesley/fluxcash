@@ -6,7 +6,7 @@ interface BalanceCardProps {
   onOpenModal?: () => void;
 }
 
-const BalanceCard: React.FC<BalanceCardProps> = ({ onOpenModal }) => {
+const BalanceCard: React.FC<BalanceCardProps> = React.memo(({ onOpenModal }) => {
   const { balance, transactions, income, privacyMode, addTransaction } = useTransactions();
   const [isVisible, setIsVisible] = useState(true);
   const [showTooltip, setShowTooltip] = useState(false);
@@ -196,6 +196,6 @@ const BalanceCard: React.FC<BalanceCardProps> = ({ onOpenModal }) => {
       </div>
     </div>
   );
-};
+});
 
 export default BalanceCard;

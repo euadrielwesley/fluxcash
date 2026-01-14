@@ -352,18 +352,38 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
   const updateProfile = useCallback(async (data: Partial<UserProfile>) => {
     setLocalProfile(prev => prev ? { ...prev, ...data } : null);
   }, []);
-  const addAIRule = async (keyword: string, category: string) => { /* ... existing impl ... */
+  const addAIRule = useCallback(async (keyword: string, category: string) => {
+    if (!user) return;
     const tempId = crypto.randomUUID();
     setAiRules(prev => [...prev, { id: tempId, keyword, category }]);
-  };
-  const removeAIRule = async (id: string) => { /* ... existing impl ... */
+    if (!isDemo) await supabase.from('ai_rules').insert({ user_id: user.id, keyword, category });
+  }, [user, isDemo]);
+
+  const removeAIRule = useCallback(async (id: string) => {
     setAiRules(prev => prev.filter(r => r.id !== id));
-  };
-  const addCustomCategory = (category: string) => { /* ... existing impl ... */
+    if (!isDemo) await supabase.from('ai_rules').delete().eq('id', id);
+  }, [isDemo]);
+
+  const addCustomCategory = useCallback(async (category: string) => {
     setCustomCategories(prev => [...prev, category]);
-  };
-  const exportData = (format: 'json' | 'csv') => { /* ... existing impl ... */ };
-  const resetData = async () => {
+    if (user && !isDemo) await supabase.from('custom_categories').insert({ user_id: user.id, name: category });
+  }, [user, isDemo]);
+
+  const exportData = useCallback((format: 'json' | 'csv') => {
+    if (!transactions.length) {
+      pushNotification({ title: 'Sem dados', message: 'Faça transações antes de exportar.', type: 'info' });
+      return;
+    }
+    const dataStr = format === 'json' ? JSON.stringify(transactions, null, 2) : transactions.map(t => `${t.dateIso},${t.title},${t.amount},${t.category}`).join('\n');
+    const blob = new Blob([dataStr], { type: format === 'json' ? 'application/json' : 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fluxcash_export_${new Date().toISOString().split('T')[0]}.${format}`;
+    a.click();
+  }, [transactions, pushNotification]);
+
+  const resetData = useCallback(async () => {
     if (!user) return;
     if (isDemo) {
       pushNotification({ title: 'Modo Demo', message: 'Dados de demonstração não podem ser apagados.', type: 'info' });
@@ -432,7 +452,7 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
     } finally {
       setIsDataLoading(false);
     }
-  };
+  }, [user, isDemo, localProfile, pushNotification]);
 
   const nextMonth = useCallback(() => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)), []);
   const prevMonth = useCallback(() => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1)), []);
@@ -451,14 +471,22 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   // ... inside component ...
 
+  const contextValue = useMemo(() => ({
+    transactions, cards, goals, debts, userProfile: localProfile || SAFE_DEFAULT_PROFILE, aiRules, customCategories, activeMissions,
+    balance, income, expenses, currentDate, isDataLoading, privacyMode, togglePrivacy,
+    addTransaction, removeTransaction, editTransaction, addCard, addGoal, addDebt, updateDebt,
+    updateProfile, completeOnboarding, grantXP, completeMission, addAIRule, removeAIRule, addCustomCategory,
+    nextMonth, prevMonth, setCurrentDate, exportData, resetData
+  }), [
+    transactions, cards, goals, debts, localProfile, aiRules, customCategories, activeMissions,
+    balance, income, expenses, currentDate, isDataLoading, privacyMode, togglePrivacy,
+    addTransaction, removeTransaction, editTransaction, addCard, addGoal, addDebt, updateDebt,
+    updateProfile, completeOnboarding, grantXP, completeMission, addAIRule, removeAIRule, addCustomCategory,
+    nextMonth, prevMonth, setCurrentDate, exportData, resetData
+  ]);
+
   return (
-    <TransactionsContext.Provider value={{
-      transactions, cards, goals, debts, userProfile: localProfile || SAFE_DEFAULT_PROFILE, aiRules, customCategories, activeMissions,
-      balance, income, expenses, currentDate, isDataLoading, privacyMode, togglePrivacy,
-      addTransaction, removeTransaction, editTransaction, addCard, addGoal, addDebt, updateDebt,
-      updateProfile, completeOnboarding, grantXP, completeMission, addAIRule, removeAIRule, addCustomCategory,
-      nextMonth, prevMonth, setCurrentDate, exportData, resetData
-    }}>
+    <TransactionsContext.Provider value={contextValue}>
       {children}
     </TransactionsContext.Provider>
   );
