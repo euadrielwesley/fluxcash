@@ -447,21 +447,25 @@ const AuthGate: React.FC = () => {
 return isAuthenticated ? <AuthenticatedApp /> : <LoginPage />;
 };
 
+import ErrorBoundary from './components/ErrorBoundary';
+
 const App: React.FC = () => {
   return (
     <IntegrationProvider>
       <AnalyticsManager />
       <NotificationProvider>
-        {/* ToastContainer moved here to work globally */}
-        <ToastContainer />
-        <InstallPromptBanner />
-        <AuthProvider>
-          <TransactionsProvider>
-            <ThemeProvider>
-              <AuthGate />
-            </ThemeProvider>
-          </TransactionsProvider>
-        </AuthProvider>
+        <ErrorBoundary>
+          {/* ToastContainer moved here to work globally */}
+          <ToastContainer />
+          <InstallPromptBanner />
+          <AuthProvider>
+            <TransactionsProvider>
+              <ThemeProvider>
+                <AuthGate />
+              </ThemeProvider>
+            </TransactionsProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </NotificationProvider>
     </IntegrationProvider>
   );

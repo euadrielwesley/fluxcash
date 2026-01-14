@@ -342,9 +342,23 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
   const nextMonth = useCallback(() => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1)), []);
   const prevMonth = useCallback(() => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1)), []);
 
+  const SAFE_DEFAULT_PROFILE: UserProfile = {
+    id: 'guest',
+    name: 'Convidado',
+    email: 'guest@fluxcash.ai',
+    avatarUrl: '',
+    xp: 0,
+    level: 1,
+    profession: 'Visitante',
+    plan: { name: 'Free', status: 'active', renewalDate: new Date().toISOString(), price: 0 },
+    hasOnboarding: false
+  };
+
+  // ... inside component ...
+
   return (
     <TransactionsContext.Provider value={{
-      transactions, cards, goals, debts, userProfile: localProfile || {} as UserProfile, aiRules, customCategories, activeMissions,
+      transactions, cards, goals, debts, userProfile: localProfile || SAFE_DEFAULT_PROFILE, aiRules, customCategories, activeMissions,
       balance, income, expenses, currentDate, isDataLoading, privacyMode, togglePrivacy,
       addTransaction, removeTransaction, editTransaction, addCard, addGoal, addDebt, updateDebt,
       updateProfile, completeOnboarding, grantXP, completeMission, addAIRule, removeAIRule, addCustomCategory,

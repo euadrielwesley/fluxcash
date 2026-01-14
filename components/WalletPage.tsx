@@ -29,7 +29,8 @@ const WalletPage: React.FC<WalletPageProps> = ({ onBack, onMenuClick }) => {
   // --- GROWTH LOGIC: Free Plan Limits ---
   const handleAddCardClick = () => {
     // If user is Free and has >= 2 cards, show upgrade modal
-    if (userProfile.plan.name !== 'Obsidian Pro' && cards.length >= 2) {
+    const planName = userProfile?.plan?.name || 'Free';
+    if (planName !== 'Obsidian Pro' && cards.length >= 2) {
       setShowUpgradeModal(true);
     } else {
       setShowAddCard(true);
