@@ -11,8 +11,6 @@ import QuickAddModal from './components/QuickAddModal';
 import Gamification from './components/Gamification';
 import MonthlyReview from './components/MonthlyReview';
 import MissionsWidget from './components/MissionsWidget';
-import MonthlyReview from './components/MonthlyReview';
-import MissionsWidget from './components/MissionsWidget';
 import { ThemeProvider } from './components/ThemeContext';
 import { TransactionsProvider, useTransactions } from './components/TransactionsContext';
 import { NotificationProvider, useNotification } from './components/NotificationContext';
@@ -25,7 +23,6 @@ import ThemeToggle from './components/ThemeToggle';
 import LoginPage from './components/LoginPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Transaction, ViewType, Story } from './types';
-import InstallPromptBanner from './components/InstallPromptBanner';
 import InstallPromptBanner from './components/InstallPromptBanner';
 import PageLoader from './components/PageLoader';
 import NotificationPersistence from './components/NotificationPersistence';
@@ -450,7 +447,9 @@ const AuthenticatedApp: React.FC = () => {
       </div>
 
       <div id="quick-add-btn">
-        <FluxOmni currentView={currentView} onOpenAddModal={handleOpenAddModal} onNavigateWallet={() => setCurrentView('wallet')} />
+        <Suspense fallback={null}>
+          <FluxOmni currentView={currentView} onOpenAddModal={handleOpenAddModal} onNavigateWallet={() => setCurrentView('wallet')} />
+        </Suspense>
       </div>
       <QuickAddModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} initialData={transactionToEdit} />
       <MonthlyReview isOpen={isReviewOpen} onClose={() => setIsReviewOpen(false)} />

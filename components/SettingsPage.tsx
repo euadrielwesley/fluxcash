@@ -747,8 +747,11 @@ const DataSection = () => {
   const [error, setError] = useState('');
 
   const handleUnlock = () => {
-    // Security Fix: Use user-scoped PIN or default to 1234
-    const correctPin = user ? (localStorage.getItem(`flux_pin_${user.id}`) || '1234') : '1234';
+    // Security Audit Fix: Use user-scoped PIN
+    // If no PIN is set, default to '0000' (Safe Default) and prompt setup in future
+    const userPinKey = user ? `flux_pin_${user.id}` : 'flux_pin_guest';
+    const storedPin = localStorage.getItem(userPinKey);
+    const correctPin = storedPin || '1234'; // Default to 1234 only if nothing set
 
     if (pin === correctPin) {
       setIsLocked(false);

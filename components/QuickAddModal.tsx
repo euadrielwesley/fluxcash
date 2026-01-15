@@ -20,16 +20,16 @@ interface BulkItem {
 
 const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialData }) => {
   const { addTransaction, editTransaction, aiRules, customCategories } = useTransactions();
-  
+
   // Modes
   const [mode, setMode] = useState<InputMode>('single');
   const [type, setType] = useState<TransactionType>('expense');
-  
+
   // Single Input States
   const [value, setValue] = useState('');
   const [description, setDescription] = useState('');
   const [isListening, setIsListening] = useState(false);
-  
+
   // Bulk Input States
   const [bulkText, setBulkText] = useState('');
   const [previewItems, setPreviewItems] = useState<BulkItem[]>([]);
@@ -102,9 +102,9 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialD
     recognition.interimResults = false;
 
     recognition.onstart = () => setIsListening(true);
-    
+
     recognition.onend = () => setIsListening(false);
-    
+
     recognition.onerror = (event: any) => {
       console.error("Speech Error", event.error);
       setIsListening(false);
@@ -122,24 +122,24 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialD
     // 1. Extract Value (looks for digits with or without comma/dot)
     // Regex: tries to find currency patterns like 35, 35.00, 35,00
     const matchNumber = text.match(/(?:R\$)?\s*(\d+(?:[.,]\d{1,2})?)/);
-    
+
     if (matchNumber) {
       let amountStr = matchNumber[1];
       // Normalize: if it has ',' it's decimal. If it has '.' it might be thousands or decimal.
       // Simple assumption for pt-BR voice: 35,50 comes as "35,50" or "35.50"
-      amountStr = amountStr.replace('.', ','); 
-      
+      amountStr = amountStr.replace('.', ',');
+
       setValue(amountStr);
-      
+
       // 2. Extract Description (everything else)
       // Remove the number and common words
       let cleanDesc = text.replace(matchNumber[0], '')
-                          .replace(/reais|real|custou|gastei|foi/gi, '')
-                          .trim();
-      
+        .replace(/reais|real|custou|gastei|foi/gi, '')
+        .trim();
+
       // Capitalize first letter
       cleanDesc = cleanDesc.charAt(0).toUpperCase() + cleanDesc.slice(1);
-      
+
       if (cleanDesc) {
         setDescription(cleanDesc);
       }
@@ -161,11 +161,11 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialD
     if (isNaN(numericValue)) return;
 
     const finalAmount = type === 'expense' ? -Math.abs(numericValue) : Math.abs(numericValue);
-    
+
     // AI Rules + Inference
     let category = 'Geral';
     const lowerDesc = description.toLowerCase();
-    
+
     const rule = aiRules.find(r => lowerDesc.includes(r.keyword.toLowerCase()));
     if (rule) {
       category = rule.category;
@@ -185,7 +185,10 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialD
       icon,
       colorClass,
       isRecurring,
-      installment: isInstallment ? '1/12' : undefined,
+      isRecurring,
+      installment: isInstallment
+        ? `1/${(document.getElementById('installments-input') as HTMLInputElement)?.value || '12'}`
+        : undefined,
     };
 
     if (initialData) editTransaction(initialData.id, transactionData);
@@ -205,13 +208,13 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialD
         let amountStr = moneyMatch[1].replace('R$', '').trim();
         if (amountStr.includes(',') && amountStr.includes('.')) amountStr = amountStr.replace('.', '').replace(',', '.');
         else if (amountStr.includes(',')) amountStr = amountStr.replace(',', '.');
-        
+
         const amount = parseFloat(amountStr);
         const title = line.replace(moneyMatch[0], '').replace('R$', '').trim() || 'Item sem nome';
-        
+
         let category = 'Geral';
         const rule = aiRules.find(r => title.toLowerCase().includes(r.keyword.toLowerCase()));
-        if(rule) category = rule.category;
+        if (rule) category = rule.category;
         else category = inferCategory(title, customCategories);
 
         items.push({ id: crypto.randomUUID(), title: title.replace(/^[-–]\s*/, ''), amount, category });
@@ -256,39 +259,37 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialD
   if (!isOpen) return null;
 
   return (
-    <div 
-      className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-200 ease-out ${
-        isVisible ? 'opacity-100' : 'opacity-0'
-      }`}
+    <div
+      className={`fixed inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-200 ease-out ${isVisible ? 'opacity-100' : 'opacity-0'
+        }`}
     >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
-      <div 
-        className={`relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl shadow-black/20 overflow-hidden transition-all duration-300 ease-out transform flex flex-col max-h-[90vh] ${
-          isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'
-        }`}
+      <div
+        className={`relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl shadow-black/20 overflow-hidden transition-all duration-300 ease-out transform flex flex-col max-h-[90vh] ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-4'
+          }`}
       >
         <div className="p-6 md:p-8 flex flex-col items-center h-full overflow-y-auto no-scrollbar">
-          
+
           {/* Top Bar: Mode Switcher */}
           <div className="w-full flex justify-center mb-6">
-             <div className="bg-zinc-100 p-1 rounded-full flex">
-                <button 
-                  onClick={() => { setMode('single'); setIsReviewingBulk(false); }}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${mode === 'single' ? 'bg-white shadow text-slate-900' : 'text-zinc-400 hover:text-zinc-600'}`}
-                >
-                  Unitário
-                </button>
-                <button 
-                  onClick={() => setMode('bulk')}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1 ${mode === 'bulk' ? 'bg-white shadow text-indigo-600' : 'text-zinc-400 hover:text-zinc-600'}`}
-                >
-                  <span className="material-symbols-outlined text-[14px]">auto_awesome</span> Em Lote
-                </button>
-             </div>
-             <button onClick={onClose} className="absolute right-6 top-6 text-zinc-400 hover:text-slate-900">
-               <span className="material-symbols-outlined">close</span>
-             </button>
+            <div className="bg-zinc-100 p-1 rounded-full flex">
+              <button
+                onClick={() => { setMode('single'); setIsReviewingBulk(false); }}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${mode === 'single' ? 'bg-white shadow text-slate-900' : 'text-zinc-400 hover:text-zinc-600'}`}
+              >
+                Unitário
+              </button>
+              <button
+                onClick={() => setMode('bulk')}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1 ${mode === 'bulk' ? 'bg-white shadow text-indigo-600' : 'text-zinc-400 hover:text-zinc-600'}`}
+              >
+                <span className="material-symbols-outlined text-[14px]">auto_awesome</span> Em Lote
+              </button>
+            </div>
+            <button onClick={onClose} className="absolute right-6 top-6 text-zinc-400 hover:text-slate-900">
+              <span className="material-symbols-outlined">close</span>
+            </button>
           </div>
 
           {/* Transaction Type Segment */}
@@ -304,9 +305,9 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialD
           {mode === 'single' && (
             <>
               <div className="flex flex-col items-center w-full mb-6 relative">
-                 <div className="flex items-baseline justify-center w-full">
+                <div className="flex items-baseline justify-center w-full">
                   <span className="text-3xl font-bold text-zinc-300 mr-2 -translate-y-2">R$</span>
-                  <input 
+                  <input
                     autoFocus
                     type="text"
                     value={value}
@@ -319,7 +320,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialD
               </div>
 
               <div className="w-full flex items-center gap-3 mb-6 relative group">
-                <input 
+                <input
                   type="text"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -327,9 +328,9 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialD
                   placeholder={isListening ? "Ouvindo..." : "O que foi?"}
                   className="flex-1 text-xl font-medium text-center text-slate-700 bg-transparent border-none outline-none placeholder:text-zinc-300"
                 />
-                <button 
+                <button
                   onClick={toggleListening}
-                  className={`absolute right-0 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${isListening ? 'bg-rose-500 text-white animate-pulse shadow-lg shadow-rose-500/40' : 'text-blue-500 bg-blue-50 hover:bg-blue-100'}`} 
+                  className={`absolute right-0 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${isListening ? 'bg-rose-500 text-white animate-pulse shadow-lg shadow-rose-500/40' : 'text-blue-500 bg-blue-50 hover:bg-blue-100'}`}
                   title="Falar descrição"
                 >
                   <span className="material-symbols-outlined text-[20px]">{isListening ? 'mic_off' : 'mic'}</span>
@@ -346,11 +347,23 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialD
               <div className="flex flex-wrap justify-center gap-2 mb-8">
                 <SmartChip icon="calendar_today" label="Hoje" />
                 {isRecurring && <SmartChip icon="loop" label="Mensal" active colorClass="bg-indigo-50 text-indigo-600 border-indigo-100" />}
+                {isInstallment && (
+                  <div className="flex items-center gap-1 bg-purple-50 px-2 py-1 rounded-full border border-purple-100 animate-fade-in">
+                    <span className="text-xs font-bold text-purple-700">1 /</span>
+                    <input
+                      type="number"
+                      className="w-8 bg-transparent text-xs font-bold text-purple-700 border-b border-purple-300 focus:outline-none text-center"
+                      placeholder="12"
+                      defaultValue="12"
+                      id="installments-input"
+                    />
+                  </div>
+                )}
                 {type === 'expense' && <SmartChip icon="credit_card" label="Nubank" active />}
               </div>
 
               <div className="w-full space-y-3 mt-auto">
-                <button 
+                <button
                   onClick={handleSaveSingle}
                   className="w-full py-4 bg-primary hover:bg-primary-dark active:scale-[0.99] transition-all rounded-2xl text-white flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
                 >
@@ -380,7 +393,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialD
                   A IA vai identificar o valor e o nome automaticamente.
                 </p>
               </div>
-              <button 
+              <button
                 onClick={handleProcessBulk}
                 disabled={!bulkText.trim()}
                 className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all rounded-2xl text-white flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20"
@@ -398,7 +411,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialD
                 <h4 className="font-bold text-slate-900">Encontramos {previewItems.length} itens</h4>
                 <button onClick={() => setIsReviewingBulk(false)} className="text-xs font-bold text-indigo-600 hover:underline">Editar Texto</button>
               </div>
-              
+
               <div className="flex-1 overflow-y-auto border border-zinc-100 rounded-xl mb-4 bg-zinc-50 divide-y divide-zinc-100 max-h-[300px]">
                 {previewItems.map((item) => (
                   <div key={item.id} className="p-3 flex items-center justify-between bg-white hover:bg-zinc-50 transition-colors group">
@@ -407,7 +420,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialD
                       <span className="text-[10px] text-zinc-500 bg-zinc-100 px-1.5 py-0.5 rounded w-fit">{item.category}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="font-mono font-bold text-slate-900">R$ {item.amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span>
+                      <span className="font-mono font-bold text-slate-900">R$ {item.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       <button onClick={() => removeBulkItem(item.id)} className="text-zinc-300 hover:text-rose-500 p-1">
                         <span className="material-symbols-outlined text-[18px]">delete</span>
                       </button>
@@ -417,13 +430,13 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialD
               </div>
 
               <div className="flex gap-3">
-                 <button 
+                <button
                   onClick={() => setIsReviewingBulk(false)}
                   className="flex-1 py-3 bg-white border border-zinc-200 text-slate-700 font-bold rounded-xl hover:bg-zinc-50"
                 >
                   Voltar
                 </button>
-                <button 
+                <button
                   onClick={handleConfirmBulk}
                   className="flex-[2] py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2"
                 >
@@ -444,7 +457,7 @@ const QuickAddModal: React.FC<QuickAddModalProps> = ({ isOpen, onClose, initialD
 
 const inferCategory = (desc: string, customCats: string[]): string => {
   const d = desc.toLowerCase();
-  
+
   // Custom categories check
   const match = customCats.find(c => d.includes(c.toLowerCase()));
   if (match) return match;
@@ -467,11 +480,11 @@ const inferIcon = (desc: string, type: TransactionType): string => {
   if (d.includes('netflix')) return 'movie';
   if (d.includes('mercado')) return 'shopping_cart';
   if (d.includes('farmácia')) return 'medication';
-  return 'receipt'; 
+  return 'receipt';
 }
 
 const SegmentButton: React.FC<{ active: boolean; onClick: () => void; label: string }> = ({ active, onClick, label }) => (
-  <button 
+  <button
     onClick={onClick}
     className={`
       flex-1 px-4 py-2 text-xs font-bold rounded-md transition-all duration-200 relative
@@ -484,7 +497,7 @@ const SegmentButton: React.FC<{ active: boolean; onClick: () => void; label: str
 
 const ToolIcon: React.FC<{ icon: string; tooltip: string; active?: boolean; onClick: () => void }> = ({ icon, tooltip, active, onClick }) => (
   <div className="relative group flex flex-col items-center">
-    <button 
+    <button
       onClick={onClick}
       className={`
         p-2 rounded-xl transition-all duration-200

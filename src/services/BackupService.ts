@@ -59,7 +59,7 @@ export const BackupService = {
             this.updateMetadata(metadata);
             this.cleanOldBackups();
 
-            console.log('[Backup] Created backup:', metadata);
+
             return metadata;
         } catch (error) {
             console.error('[Backup] Failed to create backup:', error);
@@ -94,7 +94,7 @@ export const BackupService = {
             }
 
             const backup: BackupData = JSON.parse(backupString);
-            console.log('[Backup] Restored backup from:', new Date(backup.timestamp));
+
 
             return backup.data;
         } catch (error) {
@@ -114,7 +114,7 @@ export const BackupService = {
             const backups = this.getBackups().filter(b => b.id !== backupId);
             localStorage.setItem(BACKUP_METADATA_KEY, JSON.stringify(backups));
 
-            console.log('[Backup] Deleted backup:', backupId);
+
         } catch (error) {
             console.error('[Backup] Failed to delete backup:', error);
         }
@@ -151,7 +151,7 @@ export const BackupService = {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            console.log('[Backup] Exported backup');
+
         } catch (error) {
             console.error('[Backup] Failed to export backup:', error);
             throw error;
@@ -175,7 +175,7 @@ export const BackupService = {
                         throw new Error('Invalid backup file format');
                     }
 
-                    console.log('[Backup] Imported backup from:', new Date(backup.timestamp));
+
                     resolve(backup.data);
                 } catch (error) {
                     reject(error);
@@ -217,7 +217,7 @@ export const BackupService = {
     /**
      * Update backup metadata
      */
-    private updateMetadata(newBackup: BackupMetadata): void {
+    updateMetadata(newBackup: BackupMetadata): void {
         const backups = this.getBackups();
         backups.push(newBackup);
         localStorage.setItem(BACKUP_METADATA_KEY, JSON.stringify(backups));
@@ -226,7 +226,7 @@ export const BackupService = {
     /**
      * Clean old backups (keep only MAX_BACKUPS)
      */
-    private cleanOldBackups(): void {
+    cleanOldBackups(): void {
         const backups = this.getBackups();
 
         if (backups.length > MAX_BACKUPS) {
@@ -238,7 +238,7 @@ export const BackupService = {
             const remaining = backups.slice(0, MAX_BACKUPS);
             localStorage.setItem(BACKUP_METADATA_KEY, JSON.stringify(remaining));
 
-            console.log(`[Backup] Cleaned ${toDelete.length} old backups`);
+
         }
     },
 
@@ -267,7 +267,7 @@ export const BackupService = {
             try {
                 const data = getData();
                 this.createBackup(data);
-                console.log('[Backup] Auto-backup completed');
+
             } catch (error) {
                 console.error('[Backup] Auto-backup failed:', error);
             }
