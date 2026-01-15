@@ -12,12 +12,47 @@ export const AIService = {
    * Universal fetch wrapper for OpenAI-compatible endpoints (OpenAI, Anthropic via proxy, Ollama, LocalAI)
    */
   async generateCompletion(
-    config: IntegrationConfig, 
+    config: IntegrationConfig,
     params: AIRequestParams
   ): Promise<string> {
     const apiKey = config.credentials['apiKey'] || 'no-key';
-    const baseUrl = config.credentials['baseUrl'] || 'https://api.openai.com/v1';
-    const model = config.credentials['model'] || 'gpt-3.5-turbo';
+
+    // Auto-configure Base URL based on Service ID
+    let baseUrl = config.credentials['baseUrl'];
+    if (!baseUrl) {
+      switch (config.id) {
+        case 'groq':
+          baseUrl = 'https://api.groq.com/openai/v1';
+          break;
+        case 'gemini':
+          baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai';
+          break;
+        case 'ollama':
+          baseUrl = 'http://localhost:11434/v1';
+          break;
+        default: // openai, anthropic (via proxy), etc.
+          baseUrl = 'https://api.openai.com/v1';
+      }
+    }
+
+    // Auto-configure Model based on Service ID
+    let model = config.credentials['model'];
+    if (!model) {
+      switch (config.id) {
+        case 'groq':
+          model = 'llama3-70b-8192';
+          break;
+        case 'gemini':
+          model = 'gemini-1.5-flash';
+          break;
+        case 'openai':
+          model = 'gpt-4o-mini';
+          break;
+        default:
+          model = 'gpt-3.5-turbo';
+      }
+    }
+
     const orgId = config.credentials['orgId'];
 
     // Clean URL
@@ -41,13 +76,12 @@ export const AIService = {
           model: params.model || model,
           messages: params.messages,
           temperature: params.temperature || 0.7,
-          max_tokens: 500
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error?.message || `HTTP Error ${response.status}`);
+        throw new Error(errorData.error?.message || `HTTP Error ${response.status} - ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -63,19 +97,19 @@ export const AIService = {
    */
   async testConnection(config: IntegrationConfig): Promise<{ success: boolean; message: string }> {
     try {
-        // Simple "Hello" prompt with max_tokens 1 to save cost/time
-        await this.generateCompletion(config, {
-            messages: [{ role: 'user', content: 'Hi' }],
-            temperature: 0,
-        });
-        return { success: true, message: 'Conexão estabelecida com sucesso!' };
+      // Simple "Hello" prompt with max_tokens 1 to save cost/time
+      await this.generateCompletion(config, {
+        messages: [{ role: 'user', content: 'Hi' }],
+        temperature: 0,
+      });
+      return { success: true, message: 'Conexão estabelecida com sucesso!' };
     } catch (error: any) {
-        let msg = error.message;
-        if (msg.includes('401')) msg = 'Erro 401: Chave de API inválida.';
-        if (msg.includes('404')) msg = 'Erro 404: Endpoint ou Modelo não encontrado.';
-        if (msg.includes('Failed to fetch')) msg = 'Erro de Rede: Verifique sua internet ou a URL base.';
-        
-        return { success: false, message: msg };
+      let msg = error.message;
+      if (msg.includes('401')) msg = 'Erro 401: Chave de API inválida.';
+      if (msg.includes('404')) msg = 'Erro 404: Endpoint ou Modelo não encontrado.';
+      if (msg.includes('Failed to fetch')) msg = 'Erro de Rede: Verifique sua internet ou a URL base.';
+
+      return { success: false, message: msg };
     }
   }
 };
