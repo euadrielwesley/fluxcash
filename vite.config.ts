@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => {
           manualChunks: {
             vendor: ['react', 'react-dom'],
             charts: ['recharts'],
-            utils: ['framer-motion', 'date-fns', 'crypto-js']
+            utils: ['framer-motion', 'crypto-js']
           }
         }
       }
