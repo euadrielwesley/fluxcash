@@ -395,11 +395,13 @@ const WalletPage: React.FC<WalletPageProps> = ({ onBack, onMenuClick }) => {
   );
 };
 
+import { CreditCard, FinancialGoal } from '../types';
+
 // --- MODALS (Reused) ---
-const AddCardModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (c: any) => void }> = ({ isOpen, onClose, onSave }) => {
+const AddCardModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (c: Omit<CreditCard, 'id'>) => void }> = ({ isOpen, onClose, onSave }) => {
   const [name, setName] = useState('');
   const [limit, setLimit] = useState('');
-  const [brand, setBrand] = useState('mastercard');
+  const [brand, setBrand] = useState<CreditCard['brand']>('mastercard');
   const [lastDigits, setLastDigits] = useState('');
 
   const handleSubmit = () => {
@@ -425,7 +427,7 @@ const AddCardModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (c:
           <input className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-slate-900 dark:text-zinc-100" placeholder="Apelido do Cartão" value={name} onChange={e => setName(e.target.value)} />
           <input className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-slate-900 dark:text-zinc-100" type="number" placeholder="Limite (R$)" value={limit} onChange={e => setLimit(e.target.value)} />
           <input className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-slate-900 dark:text-zinc-100" type="text" maxLength={4} placeholder="Últimos 4 dígitos" value={lastDigits} onChange={e => setLastDigits(e.target.value)} />
-          <select className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-slate-900 dark:text-zinc-100" value={brand} onChange={e => setBrand(e.target.value)}>
+          <select className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-slate-900 dark:text-zinc-100" value={brand} onChange={e => setBrand(e.target.value as CreditCard['brand'])}>
             <option value="mastercard">Mastercard</option>
             <option value="visa">Visa</option>
           </select>
@@ -440,7 +442,7 @@ const AddCardModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (c:
   );
 };
 
-const AddGoalModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (g: any) => void }> = ({ isOpen, onClose, onSave }) => {
+const AddGoalModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (g: Omit<FinancialGoal, 'id'>) => void }> = ({ isOpen, onClose, onSave }) => {
   const [name, setName] = useState('');
   const [target, setTarget] = useState('');
   const [current, setCurrent] = useState('');

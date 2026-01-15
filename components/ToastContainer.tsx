@@ -31,38 +31,45 @@ const ToastContainer: React.FC = () => {
 
   const getColor = (type: string) => {
     switch (type) {
-      case 'success': return 'bg-emerald-500 text-white shadow-emerald-500/30';
-      case 'warning': return 'bg-amber-500 text-white shadow-amber-500/30';
-      case 'error': return 'bg-rose-500 text-white shadow-rose-500/30';
-      default: return 'bg-slate-800 text-white shadow-slate-900/30';
+      case 'success': return 'bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-emerald-500/20';
+      case 'warning': return 'bg-gradient-to-br from-amber-500 to-amber-600 shadow-amber-500/20';
+      case 'error': return 'bg-gradient-to-br from-rose-500 to-rose-600 shadow-rose-500/20';
+      default: return 'bg-gradient-to-br from-blue-600 to-indigo-600 shadow-indigo-500/20';
     }
   };
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] flex flex-col gap-2 w-full max-w-sm px-4 pointer-events-none">
+    <div className="fixed bottom-24 left-4 right-4 md:bottom-6 md:right-6 md:left-auto md:w-auto z-[200] flex flex-col items-end gap-3 pointer-events-none">
       <AnimatePresence>
         {toasts.map((toast) => (
           <motion.div
             key={toast.id}
-            initial={{ opacity: 0, y: -20, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            initial={{ opacity: 0, x: 50, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: 20, scale: 0.9 }}
             layout
-            className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl shadow-xl backdrop-blur-md ${getColor(toast.type)}`}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className={`pointer-events-auto w-full max-w-[360px] flex items-start gap-4 p-4 rounded-2xl shadow-2xl backdrop-blur-xl border border-white/20 dark:border-white/5 ${getColor(toast.type)}`}
           >
-            <span className="material-symbols-outlined text-[20px] mt-0.5 filled">
-              {getIcon(toast.type)}
-            </span>
-            <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-bold leading-tight">{toast.title}</h4>
-              <p className="text-xs opacity-90 leading-tight mt-1">{toast.message}</p>
+            <div className={`mt-0.5 p-1.5 rounded-full bg-white/20 flex items-center justify-center shrink-0`}>
+              <span className="material-symbols-outlined text-[18px] filled text-white">
+                {getIcon(toast.type)}
+              </span>
             </div>
-            <button 
+
+            <div className="flex-1 min-w-0 pt-0.5">
+              <h4 className="text-sm font-black leading-tight tracking-tight text-white mb-1">{toast.title}</h4>
+              <p className="text-xs font-medium text-white/90 leading-relaxed">{toast.message}</p>
+            </div>
+
+            <button
               onClick={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
-              className="opacity-60 hover:opacity-100 transition-opacity"
+              className="p-1 -mr-2 -mt-2 opacity-50 hover:opacity-100 hover:bg-white/20 rounded-lg transition-all"
             >
-              <span className="material-symbols-outlined text-[18px]">close</span>
+              <span className="material-symbols-outlined text-[18px] text-white">close</span>
             </button>
+
+            {/* Progress Bar/Timer Effect Visualization could go here */}
           </motion.div>
         ))}
       </AnimatePresence>

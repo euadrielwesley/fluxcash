@@ -49,6 +49,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             renewalDate: new Date().toISOString(),
             price: profile.plan_name === 'Obsidian Pro' ? 29.90 : 0
           },
+          pin: profile.security_pin,
+          integrations: profile.integrations_enc || {},
           hasOnboarding: profile.has_onboarding
         } as UserProfile;
       }

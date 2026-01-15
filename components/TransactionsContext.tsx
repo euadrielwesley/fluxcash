@@ -97,7 +97,7 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
       return;
     }
 
-    // PRODUCTION: Load Cache -> Then Fetch
+    // PRODUCTION: Load Cache -> Then Fetch Progressively
     const loadData = async () => {
       // 1. Optimized Cache Loading (Non-Blocking)
       const loadCache = () => {
@@ -127,64 +127,73 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
 
       loadCache();
 
-      // 2. Background Fetch (Single Single Source of Truth)
+      // 2. Progressive Fetch (No Waterfall)
       if (transactions.length === 0) setIsDataLoading(true);
 
-      try {
-        const [txRes, cardsRes, goalsRes, debtsRes, rulesRes, profileRes] = await Promise.all([
-          supabase.from('transactions').select('*').order('date_iso', { ascending: false }).limit(300),
-          supabase.from('credit_cards').select('*'),
-          supabase.from('financial_goals').select('*'),
-          supabase.from('debts').select('*'),
-          supabase.from('ai_rules').select('*'),
-          supabase.from('profiles').select('*').eq('id', user.id).single()
-        ]);
+      // A. Critical Path: Transactions (Show ASAP)
+      (async () => {
+        try {
+          const { data, error } = await supabase.from('transactions').select('*').order('date_iso', { ascending: false }).limit(300);
 
-        if (txRes.data) {
-          const mappedTx = txRes.data.map(t => ({
-            id: t.id, title: t.title, amount: Number(t.amount), type: t.type, category: t.category, account: t.account, dateIso: t.date_iso, isRecurring: t.is_recurring, installment: t.installment, icon: t.icon, colorClass: t.color_class
-          }));
-          setTransactions(mappedTx);
-          localStorage.setItem(`flux_tx_${user.id}`, JSON.stringify(mappedTx));
+          if (error) throw error;
+
+          if (data) {
+            const mappedTx = data.map(t => ({
+              id: t.id, title: t.title, amount: Number(t.amount), type: t.type, category: t.category, account: t.account, dateIso: t.date_iso, isRecurring: t.is_recurring, installment: t.installment, icon: t.icon, colorClass: t.color_class
+            }));
+            setTransactions(mappedTx);
+            localStorage.setItem(`flux_tx_${user.id}`, JSON.stringify(mappedTx));
+            setIsDataLoading(false); // <--- UNBLOCK UI HERE (Fast LCP)
+          }
+        } catch (err) {
+          console.error("Tx Fetch Error", err);
+          setIsDataLoading(false); // Ensure unblock even on error
+          pushNotification({ title: 'Erro de Conexão', message: 'Falha ao carregar transações.', type: 'error', category: 'system' });
         }
+      })();
 
-        if (cardsRes.data) {
-          const mappedCards = cardsRes.data.map(c => ({
+      // B. Secondary Data (Parallel - Don't block UI)
+      supabase.from('credit_cards').select('*').then(({ data }) => {
+        if (data) {
+          const mapped = data.map(c => ({
             id: c.id, name: c.name, brand: c.brand, limit: Number(c.limit), bill: Number(c.bill), color: c.color, dueDate: c.due_date, lastDigits: c.last_digits
           }));
-          setCards(mappedCards);
-          localStorage.setItem(`flux_cards_${user.id}`, JSON.stringify(mappedCards));
+          setCards(mapped);
+          localStorage.setItem(`flux_cards_${user.id}`, JSON.stringify(mapped));
         }
+      });
 
-        if (goalsRes.data) {
-          const mappedGoals = goalsRes.data.map(g => ({
+      supabase.from('financial_goals').select('*').then(({ data }) => {
+        if (data) {
+          const mapped = data.map(g => ({
             id: g.id, name: g.name, target: Number(g.target), current: Number(g.current), deadline: g.deadline, icon: g.icon, color: g.color
           }));
-          setGoals(mappedGoals);
-          localStorage.setItem(`flux_goals_${user.id}`, JSON.stringify(mappedGoals));
+          setGoals(mapped);
+          localStorage.setItem(`flux_goals_${user.id}`, JSON.stringify(mapped));
         }
+      });
 
-        if (debtsRes.data) {
-          const mappedDebts = debtsRes.data.map(d => ({
+      supabase.from('debts').select('*').then(({ data }) => {
+        if (data) {
+          const mapped = data.map(d => ({
             id: d.id, name: d.name, bank: d.bank, total_installments: d.total_installments, paid_installments: d.paid_installments, original_debt: Number(d.original_debt), current_balance: Number(d.current_balance), value_parcel: Number(d.value_parcel), color: d.color
           }));
-          setDebts(mappedDebts);
-          localStorage.setItem(`flux_debts_${user.id}`, JSON.stringify(mappedDebts));
+          setDebts(mapped);
+          localStorage.setItem(`flux_debts_${user.id}`, JSON.stringify(mapped));
         }
+      });
 
-        if (rulesRes.data) setAiRules(rulesRes.data);
+      supabase.from('ai_rules').select('*').then(({ data }) => {
+        if (data) setAiRules(data);
+      });
 
-        if (profileRes.data) {
-          const updatedProfile = { ...localProfile!, xp: profileRes.data.xp, level: profileRes.data.level, hasOnboarding: profileRes.data.has_onboarding, plan: { ...localProfile?.plan, name: profileRes.data.plan_name || 'Free' } };
+      supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data }) => {
+        if (data) {
+          const updatedProfile = { ...localProfile!, xp: data.xp, level: data.level, hasOnboarding: data.has_onboarding, plan: { ...localProfile?.plan, name: data.plan_name || 'Free' } };
           setLocalProfile(updatedProfile);
           localStorage.setItem(`flux_profile_${user.id}`, JSON.stringify(updatedProfile));
         }
-
-      } catch (error) {
-        console.error("Supabase Sync Error:", error);
-      } finally {
-        setIsDataLoading(false);
-      }
+      });
     };
 
     loadData();
@@ -305,13 +314,34 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
     return missions;
   }, [transactions, income, expenses, balance, completedMissions]);
 
+  // Load completed missions from LocalStorage on mount/user change
+  useEffect(() => {
+    if (!user || isDemo) return;
+    const dateKey = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const storageKey = `flux_missions_${user.id}_${dateKey}`;
+    const stored = localStorage.getItem(storageKey);
+    if (stored) {
+      setCompletedMissions(JSON.parse(stored));
+    } else {
+      setCompletedMissions([]);
+    }
+  }, [user, isDemo]);
+
   const completeMission = useCallback((missionId: string) => {
     const mission = activeMissions.find(m => m.id === missionId);
     if (mission && !mission.isCompleted) {
-      setCompletedMissions(prev => [...prev, missionId]);
+      setCompletedMissions(prev => {
+        const newVal = [...prev, missionId];
+        // Persist to LocalStorage
+        if (user && !isDemo) {
+          const dateKey = new Date().toISOString().split('T')[0];
+          localStorage.setItem(`flux_missions_${user.id}_${dateKey}`, JSON.stringify(newVal));
+        }
+        return newVal;
+      });
       grantXP(mission.xp, `Missão: ${mission.title}`);
     }
-  }, [activeMissions, grantXP]);
+  }, [activeMissions, grantXP, user, isDemo]);
 
   const addTransaction = useCallback(async (data: Omit<Transaction, 'id'>) => {
     if (!user) return;
@@ -327,10 +357,23 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
     grantXP(10, 'Nova Transação');
     if (!isDemo) {
       const newTxPayload = { user_id: user.id, title: data.title, amount: data.amount, type: data.type, category: finalCategory, account: data.account, date_iso: newTx.dateIso, is_recurring: data.isRecurring || false, installment: data.installment, icon: data.icon, color_class: data.colorClass };
-      const { data: inserted, error } = await supabase.from('transactions').insert(newTxPayload).select().single();
-      if (inserted) setTransactions(prev => prev.map(t => t.id === tempId ? { ...t, id: inserted.id } : t));
+
+      (async () => {
+        try {
+          const { data: inserted, error } = await supabase.from('transactions').insert(newTxPayload).select().single();
+
+          if (error) throw error;
+
+          if (inserted) {
+            setTransactions(prev => prev.map(t => t.id === tempId ? { ...t, id: inserted.id } : t));
+          }
+        } catch (error) {
+          console.error('Error adding transaction:', error);
+          pushNotification({ title: 'Erro ao Salvar', message: 'A transação não foi salva na nuvem.', type: 'error', category: 'system' });
+        }
+      })();
     }
-  }, [user, aiRules, isDemo, grantXP]);
+  }, [user, aiRules, isDemo, grantXP, pushNotification]);
 
   const removeTransaction = useCallback(async (id: string) => {
     setTransactions(prev => prev.filter(t => t.id !== id));
@@ -344,25 +387,113 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const addCard = useCallback(async (card: Omit<CreditCard, 'id'>) => {
     const tempId = crypto.randomUUID();
-    setCards(prev => [...prev, { ...card, id: tempId }]);
-    grantXP(50);
-  }, [grantXP]);
+    const newCard: CreditCard = { ...card, id: tempId };
+    setCards(prev => [...prev, newCard]);
+    grantXP(50, 'Novo Cartão');
+
+    if (!isDemo && user) {
+      // Snake_case conversion if needed based on table schema, but assuming matching names or auto-mapping
+      const { data, error } = await supabase.from('credit_cards').insert({
+        user_id: user.id,
+        name: card.name,
+        brand: card.brand,
+        limit: card.limit,
+        bill: card.bill,
+        color: card.color,
+        due_date: card.dueDate,
+        last_digits: card.lastDigits
+      }).select().single();
+
+      if (error) {
+        console.error('Error adding card:', error);
+        // Optional: Notify user or rollback
+      } else if (data) {
+        setCards(prev => prev.map(c => c.id === tempId ? { ...c, id: data.id } : c));
+      }
+    }
+  }, [grantXP, user, isDemo]);
   const addGoal = useCallback(async (goal: Omit<FinancialGoal, 'id'>) => {
     const tempId = crypto.randomUUID();
     setGoals(prev => [...prev, { ...goal, id: tempId }]);
-    grantXP(50);
-  }, [grantXP]);
+    grantXP(50, 'Nova Meta');
+
+    if (!isDemo && user) {
+      const { data, error } = await supabase.from('financial_goals').insert({
+        user_id: user.id,
+        name: goal.name,
+        target: goal.target,
+        current: goal.current,
+        deadline: goal.deadline,
+        icon: goal.icon,
+        color: goal.color
+      }).select().single();
+
+      if (error) {
+        console.error('Error adding goal:', error);
+      } else if (data) {
+        setGoals(prev => prev.map(g => g.id === tempId ? { ...g, id: data.id } : g));
+      }
+    }
+  }, [grantXP, user, isDemo]);
   const addDebt = useCallback(async (debt: Omit<Debt, 'id'>) => {
     const tempId = crypto.randomUUID();
     setDebts(prev => [...prev, { ...debt, id: tempId }]);
-    grantXP(30);
-  }, [grantXP]);
+    grantXP(30, 'Dívida Registrada');
+
+    if (!isDemo && user) {
+      const { data, error } = await supabase.from('debts').insert({
+        user_id: user.id,
+        name: debt.name,
+        bank: debt.bank,
+        total_installments: debt.total_installments,
+        paid_installments: debt.paid_installments,
+        original_debt: debt.original_debt,
+        current_balance: debt.current_balance,
+        value_parcel: debt.value_parcel,
+        color: debt.color
+      }).select().single();
+
+      if (error) {
+        console.error('Error adding debt:', error);
+      } else if (data) {
+        setDebts(prev => prev.map(d => d.id === tempId ? { ...d, id: data.id } : d));
+      }
+    }
+  }, [grantXP, user, isDemo]);
   const updateDebt = useCallback(async (id: string | number, updated: Partial<Debt>) => {
     setDebts(prev => prev.map(d => d.id === id ? { ...d, ...updated } : d));
-  }, []);
+    if (!isDemo && user) {
+      await supabase.from('debts').update(updated).eq('id', id);
+    }
+  }, [isDemo, user]);
   const updateProfile = useCallback(async (data: Partial<UserProfile>) => {
+    // 1. Optimistic Update
     setLocalProfile(prev => prev ? { ...prev, ...data } : null);
-  }, []);
+
+    // 2. Persist to Supabase
+    if (!user || isDemo) return;
+
+    try {
+      const payload: any = {};
+      if (data.name) payload.name = data.name;
+      if (data.avatarUrl) payload.avatar_url = data.avatarUrl;
+      if (data.profession) payload.profession = data.profession;
+
+      if (Object.keys(payload).length > 0) {
+        const { error } = await supabase.from('profiles').update(payload).eq('id', user.id);
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      pushNotification({
+        title: 'Erro ao salvar perfil',
+        message: 'Suas alterações não foram salvas na nuvem.',
+        type: 'error',
+        category: 'system'
+      });
+      // Optional: Rollback state here if needed
+    }
+  }, [user, isDemo, pushNotification]);
   const addAIRule = useCallback(async (keyword: string, category: string) => {
     if (!user) return;
     const tempId = crypto.randomUUID();
@@ -382,10 +513,10 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
 
   const exportData = useCallback((format: 'json' | 'csv') => {
     if (!transactions.length) {
-      pushNotification({ title: 'Sem dados', message: 'Faça transações antes de exportar.', type: 'info' });
+      pushNotification({ title: 'Sem dados', message: 'Faça transações antes de exportar.', type: 'info', category: 'system' });
       return;
     }
-    const dataStr = format === 'json' ? JSON.stringify(transactions, null, 2) : transactions.map(t => `${t.dateIso},${t.title},${t.amount},${t.category}`).join('\n');
+    const dataStr = format === 'json' ? JSON.stringify(transactions, null, 2) : transactions.map(t => `${t.dateIso},${t.title},${t.amount},${t.category},${t.type}`).join('\n');
     const blob = new Blob([dataStr], { type: format === 'json' ? 'application/json' : 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -397,7 +528,7 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
   const resetData = useCallback(async () => {
     if (!user) return;
     if (isDemo) {
-      pushNotification({ title: 'Modo Demo', message: 'Dados de demonstração não podem ser apagados.', type: 'info' });
+      pushNotification({ title: 'Modo Demo', message: 'Dados de demonstração não podem ser apagados.', type: 'info', category: 'system' });
       return;
     }
 
@@ -438,12 +569,20 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
         setLocalProfile({ ...localProfile, xp: 0, level: 1 });
       }
 
-      // 4. Clear Cache
+      // 4. Clear Cache & Local Settings
       localStorage.removeItem(`flux_tx_${user.id}`);
       localStorage.removeItem(`flux_cards_${user.id}`);
       localStorage.removeItem(`flux_goals_${user.id}`);
       localStorage.removeItem(`flux_debts_${user.id}`);
       localStorage.removeItem(`flux_profile_${user.id}`);
+
+      // Clear Integrations & Security
+      localStorage.removeItem(`flux_integrations_${user.id}`);
+      localStorage.removeItem(`flux_pin_${user.id}`);
+
+      // Clear Missions Cache (Partial match)
+      const dateKey = new Date().toISOString().split('T')[0];
+      localStorage.removeItem(`flux_missions_${user.id}_${dateKey}`);
 
       pushNotification({
         title: 'Dados Apagados',

@@ -26,7 +26,9 @@ import LoginPage from './components/LoginPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import { Transaction, ViewType, Story } from './types';
 import InstallPromptBanner from './components/InstallPromptBanner';
+import InstallPromptBanner from './components/InstallPromptBanner';
 import PageLoader from './components/PageLoader';
+import NotificationPersistence from './components/NotificationPersistence';
 
 // Lazy load heavy page components for better performance
 const TransactionsPage = lazy(() => import('./components/TransactionsPage'));
@@ -282,6 +284,8 @@ const AuthenticatedApp: React.FC = () => {
       <AnimatePresence>
         {showMobileNotifications && <NotificationPanel isOpen={showMobileNotifications} onClose={() => setShowMobileNotifications(false)} isMobile />}
       </AnimatePresence>
+
+      <NotificationPersistence />
 
       <div className="hidden md:flex flex-1 h-full overflow-hidden">
         {/* DESKTOP LAYOUT (Unchanged) */}

@@ -9,6 +9,7 @@ interface NotificationContextType {
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearAll: () => void;
+  loadNotifications: (data: AppNotification[]) => void;
   requestPermission: () => Promise<void>;
   permissionStatus: NotificationPermission;
 }
@@ -20,18 +21,14 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
 
   useEffect(() => {
-    const stored = localStorage.getItem('flux_notifications');
-    if (stored) {
-      setNotifications(JSON.parse(stored));
-    }
     if ('Notification' in window) {
       setPermissionStatus(Notification.permission);
     }
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('flux_notifications', JSON.stringify(notifications));
-  }, [notifications]);
+  const loadNotifications = useCallback((data: AppNotification[]) => {
+    setNotifications(data);
+  }, []);
 
   const requestPermission = async () => {
     if (!('Notification' in window)) return;
@@ -53,7 +50,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
       gainNode.connect(ctx.destination);
 
       const now = ctx.currentTime;
-      
+
       if (type === 'success') {
         // Suave "Ding" (Sine wave pura, sem ramping agressivo)
         oscillator.type = 'sine';
@@ -113,7 +110,7 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
     if (document.visibilityState === 'hidden' || data.type === 'warning' || data.type === 'success') {
       sendNativeNotification(data.title, data.message);
     }
-    
+
     window.dispatchEvent(new CustomEvent('flux-toast', { detail: newNotification }));
   }, [permissionStatus]);
 
@@ -140,7 +137,8 @@ export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ childr
       markAllAsRead,
       clearAll,
       requestPermission,
-      permissionStatus
+      permissionStatus,
+      loadNotifications
     }}>
       {children}
     </NotificationContext.Provider>

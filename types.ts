@@ -113,6 +113,8 @@ export interface UserProfile {
   profession: string;
   plan: UserPlan;
   hasOnboarding: boolean;
+  pin?: string;
+  integrations?: Record<string, any>;
 }
 
 export interface Mission {
@@ -158,7 +160,7 @@ export interface IntegrationConfig {
 
 export type IntegrationMap = Record<string, IntegrationConfig>;
 
-export type ViewType = 'dashboard' | 'gamification' | 'transactions' | 'wallet' | 'analytics' | 'settings' | 'expenses' | 'income' | 'integrations';
+export type ViewType = 'dashboard' | 'gamification' | 'transactions' | 'wallet' | 'analytics' | 'settings' | 'expenses' | 'income' | 'integrations' | 'flux-omni';
 
 export type DiagnosticStatus = 'idle' | 'running' | 'success' | 'warning' | 'error';
 
