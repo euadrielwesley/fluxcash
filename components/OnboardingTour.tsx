@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTransactions } from './TransactionsContext';
 
 interface Step {
-  targetId?: string; 
+  targetId?: string;
   title: string;
   content: string;
   position: 'center' | 'bottom' | 'top' | 'right-start';
@@ -56,12 +56,19 @@ const OnboardingTour: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // REDUNDANT CHECK: If persistent flag exists in localStorage, do NOT show
+    const localSeen = localStorage.getItem('flux_onboarding_seen');
+    if (localSeen === 'true') {
+      setIsVisible(false);
+      return;
+    }
+
     // Check if user is loaded and hasn't seen onboarding yet based on DB profile
     if (userProfile && userProfile.email) {
-       // Se o DB diz que não viu (hasOnboarding === false), mostramos.
-       if (userProfile.hasOnboarding === false) {
-          setIsVisible(true);
-       }
+      // Se o DB diz que não viu (hasOnboarding === false), mostramos.
+      if (userProfile.hasOnboarding === false) {
+        setIsVisible(true);
+      }
     }
   }, [userProfile]);
 
@@ -106,6 +113,8 @@ const OnboardingTour: React.FC = () => {
 
   const handleComplete = () => {
     setIsVisible(false);
+    // Persistência Redundante (Local)
+    localStorage.setItem('flux_onboarding_seen', 'true');
     // Atualiza no banco de dados para nunca mais mostrar
     completeOnboarding();
     // Garante o XP de boas-vindas
@@ -117,30 +126,30 @@ const OnboardingTour: React.FC = () => {
   const step = STEPS[currentStep];
   const isCenter = step.position === 'center' || !step.targetId;
 
-  const modalStyle: React.CSSProperties = isMobile 
+  const modalStyle: React.CSSProperties = isMobile
     ? { bottom: '20px', left: '16px', right: '16px', position: 'fixed' }
-    : (!isCenter && step.targetId && spotlightStyle.opacity !== 0) 
-        ? {
-            position: 'absolute',
-            top: (spotlightStyle.top as number) + (spotlightStyle.height as number) + 20,
-            left: (spotlightStyle.left as number),
-          }
-        : {
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)'
-          };
+    : (!isCenter && step.targetId && spotlightStyle.opacity !== 0)
+      ? {
+        position: 'absolute',
+        top: (spotlightStyle.top as number) + (spotlightStyle.height as number) + 20,
+        left: (spotlightStyle.left as number),
+      }
+      : {
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)'
+      };
 
   return (
     <div className="fixed inset-0 z-[200] overflow-hidden pointer-events-none">
       <div className="absolute inset-0 bg-slate-900/80 transition-colors duration-500 pointer-events-auto">
-         {!isMobile && step.targetId && (
-           <div 
-             className="absolute bg-transparent shadow-[0_0_0_9999px_rgba(15,23,42,0.8)] rounded-2xl transition-all duration-500 ease-in-out border-2 border-white/50 animate-pulse"
-             style={spotlightStyle}
-           />
-         )}
+        {!isMobile && step.targetId && (
+          <div
+            className="absolute bg-transparent shadow-[0_0_0_9999px_rgba(15,23,42,0.8)] rounded-2xl transition-all duration-500 ease-in-out border-2 border-white/50 animate-pulse"
+            style={spotlightStyle}
+          />
+        )}
       </div>
 
       <AnimatePresence mode='wait'>
@@ -154,40 +163,40 @@ const OnboardingTour: React.FC = () => {
           style={modalStyle}
         >
           <div className="flex justify-between items-center mb-4">
-             <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
-               Passo {currentStep + 1} de {STEPS.length}
-             </span>
-             <button onClick={handleSkip} className="text-xs font-bold text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-               Pular
-             </button>
+            <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider">
+              Passo {currentStep + 1} de {STEPS.length}
+            </span>
+            <button onClick={handleSkip} className="text-xs font-bold text-zinc-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+              Pular
+            </button>
           </div>
 
           <div className="mb-6">
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                {step.title}
+              {step.title}
             </h3>
             <p className="text-sm text-zinc-500 dark:text-zinc-300 leading-relaxed">
-                {step.content}
+              {step.content}
             </p>
           </div>
 
           <div className="flex justify-between items-center">
-             <div className="flex gap-1.5">
-                {STEPS.map((_, idx) => (
-                  <div key={idx} className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentStep ? 'w-6 bg-primary' : 'w-1.5 bg-zinc-200 dark:bg-zinc-700'}`} />
-                ))}
-             </div>
-             
-             <button 
-               onClick={handleNext}
-               className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-3 rounded-xl font-bold text-sm shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
-             >
-               {currentStep === STEPS.length - 1 ? (
-                   <>Começar <span className="material-symbols-outlined text-[16px]">rocket_launch</span></>
-               ) : (
-                   <>Próximo <span className="material-symbols-outlined text-[16px]">arrow_forward</span></>
-               )}
-             </button>
+            <div className="flex gap-1.5">
+              {STEPS.map((_, idx) => (
+                <div key={idx} className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentStep ? 'w-6 bg-primary' : 'w-1.5 bg-zinc-200 dark:bg-zinc-700'}`} />
+              ))}
+            </div>
+
+            <button
+              onClick={handleNext}
+              className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-6 py-3 rounded-xl font-bold text-sm shadow-lg hover:scale-105 transition-transform flex items-center gap-2"
+            >
+              {currentStep === STEPS.length - 1 ? (
+                <>Começar <span className="material-symbols-outlined text-[16px]">rocket_launch</span></>
+              ) : (
+                <>Próximo <span className="material-symbols-outlined text-[16px]">arrow_forward</span></>
+              )}
+            </button>
           </div>
         </motion.div>
       </AnimatePresence>
