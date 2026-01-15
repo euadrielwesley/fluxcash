@@ -28,6 +28,7 @@ interface ServiceDefinition {
   desc: string;
   fields: ServiceField[];
   canTest?: boolean;
+  docsUrl?: string;
 }
 
 const SERVICES: ServiceDefinition[] = [
@@ -44,7 +45,8 @@ const SERVICES: ServiceDefinition[] = [
       { key: 'model', label: 'Nome do Modelo', type: 'text', placeholder: 'gpt-4o-mini' },
       { key: 'orgId', label: 'Organization ID (Opcional)', type: 'text', placeholder: 'org-...' }
     ],
-    canTest: true
+    canTest: true,
+    docsUrl: 'https://platform.openai.com/api-keys'
   },
   {
     id: 'ollama',
@@ -58,7 +60,8 @@ const SERVICES: ServiceDefinition[] = [
       { key: 'model', label: 'Nome do Modelo', type: 'text', placeholder: 'llama3' },
       { key: 'apiKey', label: 'API Key (Se necessário)', type: 'secure', placeholder: 'ollama' }
     ],
-    canTest: true
+    canTest: true,
+    docsUrl: 'https://ollama.com/library'
   },
   {
     id: 'anthropic',
@@ -67,7 +70,8 @@ const SERVICES: ServiceDefinition[] = [
     icon: 'psychology',
     color: 'text-orange-500',
     desc: 'Análise avançada de contextos longos.',
-    fields: [{ key: 'apiKey', label: 'API Key', type: 'secure' }]
+    fields: [{ key: 'apiKey', label: 'API Key', type: 'secure' }],
+    docsUrl: 'https://console.anthropic.com/settings/keys'
   },
   {
     id: 'gemini',
@@ -77,7 +81,8 @@ const SERVICES: ServiceDefinition[] = [
     color: 'text-blue-500',
     desc: 'IA Multimodal de alta performance do Google.',
     fields: [{ key: 'apiKey', label: 'API Key', type: 'secure', placeholder: 'AIza...' }],
-    canTest: true
+    canTest: true,
+    docsUrl: 'https://aistudio.google.com/app/apikey'
   },
   {
     id: 'groq',
@@ -87,7 +92,8 @@ const SERVICES: ServiceDefinition[] = [
     color: 'text-orange-600',
     desc: 'Inferência ultra-rápida (LPU) para respostas instantâneas.',
     fields: [{ key: 'apiKey', label: 'API Key', type: 'secure', placeholder: 'gsk_...' }],
-    canTest: true
+    canTest: true,
+    docsUrl: 'https://console.groq.com/keys'
   },
   {
     id: 'gtm',
@@ -96,7 +102,8 @@ const SERVICES: ServiceDefinition[] = [
     icon: 'code',
     color: 'text-blue-500',
     desc: 'Injeção de scripts de terceiros e pixel de rastreamento.',
-    fields: [{ key: 'containerId', label: 'Container ID', type: 'text', placeholder: 'GTM-XXXXXX' }]
+    fields: [{ key: 'containerId', label: 'Container ID', type: 'text', placeholder: 'GTM-XXXXXX' }],
+    docsUrl: 'https://tagmanager.google.com/'
   },
   {
     id: 'webhook',
@@ -249,6 +256,21 @@ const IntegrationCard: React.FC<{ service: ServiceDefinition }> = ({ service }) 
             <Switch checked={config.enabled} onChange={handleToggle} />
           </div>
         </div>
+
+        {/* Link para documentação/chaves */}
+        {service.docsUrl && (
+          <div className="mb-4 -mt-2">
+            <a
+              href={service.docsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+            >
+              Obter API Key
+              <span className="material-symbols-outlined text-[14px]">open_in_new</span>
+            </a>
+          </div>
+        )}
 
         {config.enabled && (
           <div className="mt-6 pt-6 border-t border-zinc-100 dark:border-zinc-800/50 animate-fade-in space-y-4">
