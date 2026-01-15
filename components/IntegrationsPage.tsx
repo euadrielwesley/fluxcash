@@ -82,6 +82,26 @@ const SERVICES: ServiceDefinition[] = [
     fields: [{ key: 'apiKey', label: 'API Key', type: 'secure' }]
   },
   {
+    id: 'gemini',
+    name: 'Google Gemini',
+    category: 'intelligence',
+    icon: 'spark',
+    color: 'text-blue-500',
+    desc: 'IA Multimodal de alta performance do Google.',
+    fields: [{ key: 'apiKey', label: 'API Key', type: 'secure', placeholder: 'AIza...' }],
+    canTest: true
+  },
+  {
+    id: 'groq',
+    name: 'Groq Cloud',
+    category: 'intelligence',
+    icon: 'speed',
+    color: 'text-orange-600',
+    desc: 'Inferência ultra-rápida (LPU) para respostas instantâneas.',
+    fields: [{ key: 'apiKey', label: 'API Key', type: 'secure', placeholder: 'gsk_...' }],
+    canTest: true
+  },
+  {
     id: 'gtm',
     name: 'Google Tag Manager',
     category: 'analytics',
@@ -145,8 +165,8 @@ const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ onBack, onMenuClick
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
                 className={`w-full flex flex-col md:flex-row items-center md:gap-3 px-2 md:px-4 py-3 rounded-xl transition-all duration-200 ${activeCategory === cat.id
-                    ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-zinc-200 dark:border-zinc-700'
-                    : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-slate-900 dark:hover:text-zinc-200'
+                  ? 'bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm border border-zinc-200 dark:border-zinc-700'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/50 hover:text-slate-900 dark:hover:text-zinc-200'
                   }`}
               >
                 <span className={`material-symbols-outlined text-[24px] ${activeCategory === cat.id ? 'filled' : ''}`}>{cat.icon}</span>
