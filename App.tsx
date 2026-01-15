@@ -476,23 +476,22 @@ const AuthGate: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <IntegrationProvider>
-      <AnalyticsManager />
-      <NotificationProvider>
-        <ErrorBoundary>
-          {/* ToastContainer moved here to work globally */}
-          <ToastContainer />
-          <InstallPromptBanner />
-          <AuthProvider>
+    <NotificationProvider>
+      <ErrorBoundary>
+        <ToastContainer />
+        <InstallPromptBanner />
+        <AuthProvider>
+          <IntegrationProvider>
             <TransactionsProvider>
+              <AnalyticsManager />
               <ThemeProvider>
                 <AuthGate />
               </ThemeProvider>
             </TransactionsProvider>
-          </AuthProvider>
-        </ErrorBoundary>
-      </NotificationProvider>
-    </IntegrationProvider>
+          </IntegrationProvider>
+        </AuthProvider>
+      </ErrorBoundary>
+    </NotificationProvider>
   );
 };
 
