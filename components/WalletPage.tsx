@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 import { useTransactions } from './TransactionsContext';
 import { useNotification } from './NotificationContext';
+import { CreditCard, FinancialGoal } from '../types';
 
 interface WalletPageProps {
   onBack: () => void;
@@ -62,7 +63,8 @@ const WalletPage: React.FC<WalletPageProps> = ({ onBack, onMenuClick }) => {
     transactions.forEach(t => {
       if (t.type === 'expense' && t.installment) {
         // Format "1/10" or "10/12"
-        const parts = t.installment.split('/');
+        // Robust split check
+        const parts = String(t.installment).split('/');
         if (parts.length === 2) {
           const currentParcel = parseInt(parts[0]);
           const totalParcels = parseInt(parts[1]);
@@ -226,7 +228,7 @@ const WalletPage: React.FC<WalletPageProps> = ({ onBack, onMenuClick }) => {
               onClick={handleAddCardClick}
               className="snap-center shrink-0 w-[60px] h-[180px] rounded-2xl border-2 border-dashed border-zinc-300 dark:border-zinc-700 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 hover:border-violet-500 hover:text-violet-500 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition-colors gap-2 group bg-zinc-50 dark:bg-zinc-900"
             >
-              <div className="size-8 rounded-full bg-zinc-100 dark:bg-zinc-800 group-hover:bg-violet-100 dark:group-hover:bg-violet-500/20 flex items-center justify-center transition-colors">
+              <div className="size-8 rounded-full bg-zinc-100 dark:bg-zinc-800 group-hover:bg-violet-100 dark:group-hover:bg-violet-500/20 flex items-center justify-center transition-colors shadow-sm">
                 <span className="material-symbols-outlined text-[20px]">add</span>
               </div>
             </button>
@@ -238,7 +240,7 @@ const WalletPage: React.FC<WalletPageProps> = ({ onBack, onMenuClick }) => {
           <div className="bg-white dark:bg-[#18181b] rounded-2xl p-6 shadow-sm border border-zinc-100 dark:border-zinc-800 flex flex-col">
             <h3 className="font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
               <span className="material-symbols-outlined text-violet-500">date_range</span>
-              Comprometimento Futuro
+              Túnel de Parcelas
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1">Parcelas já assumidas nos próximos meses.</p>
           </div>
@@ -271,131 +273,126 @@ const WalletPage: React.FC<WalletPageProps> = ({ onBack, onMenuClick }) => {
             </BarChart>
           </ResponsiveContainer>
         </div>
-      </div>
 
-      {/* Growth/Gamification Element: Freedom Progress */}
-      <div className="bg-white dark:bg-[#18181b] rounded-2xl p-6 shadow-sm border border-zinc-100 dark:border-zinc-800 flex flex-col justify-center">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
-            <span className="material-symbols-outlined text-amber-500 filled">flag</span>
-            Independência
-          </h3>
-          <span className="text-xs font-bold text-slate-400">Meta: 6 Meses de Reserva</span>
-        </div>
-
-        <div className="space-y-4">
-          <div>
-            <div className="flex justify-between text-xs font-medium text-slate-600 dark:text-zinc-400 mb-1">
-              <span>Reserva de Emergência</span>
-              <span>{Math.min(100, Math.round((balance / (2000 * 6)) * 100))}%</span>
-            </div>
-            <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" style={{ width: `${Math.min(100, (balance / 12000) * 100)}%` }}></div>
-            </div>
-            <p className="text-[10px] text-zinc-400 mt-1">Baseado em custo de vida est. R$ 2.000/mês</p>
+        {/* Growth/Gamification Element: Freedom Progress */}
+        <div className="bg-white dark:bg-[#18181b] rounded-2xl p-6 shadow-sm border border-zinc-100 dark:border-zinc-800 flex flex-col justify-center mx-6 mt-6">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
+              <span className="material-symbols-outlined text-amber-500 filled">flag</span>
+              Independência
+            </h3>
+            <span className="text-xs font-bold text-slate-400">Meta: 6 Meses de Reserva</span>
           </div>
 
-          <div className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800 flex gap-3 items-center">
-            <div className="size-8 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-[16px]">rocket_launch</span>
-            </div>
+          <div className="space-y-4">
             <div>
-              <p className="text-xs font-bold text-slate-800 dark:text-zinc-200">Dica de Growth</p>
-              <p className="text-[10px] text-slate-500 dark:text-zinc-400 leading-tight">Antecipar parcelas do "Túnel" pode gerar até 10% de desconto no Nubank.</p>
+              <div className="flex justify-between text-xs font-medium text-slate-600 dark:text-zinc-400 mb-1">
+                <span>Reserva de Emergência</span>
+                <span>{Math.min(100, Math.round((balance / (2000 * 6)) * 100))}%</span>
+              </div>
+              <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                <div className="h-full bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" style={{ width: `${Math.min(100, (balance / 12000) * 100)}%` }}></div>
+              </div>
+              <p className="text-[10px] text-zinc-400 mt-1">Baseado em custo de vida est. R$ 2.000/mês</p>
+            </div>
+
+            <div className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800 flex gap-3 items-center">
+              <div className="size-8 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[16px]">rocket_launch</span>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-800 dark:text-zinc-200">Dica de Growth</p>
+                <p className="text-[10px] text-slate-500 dark:text-zinc-400 leading-tight">Antecipar parcelas do "Túnel" pode gerar até 10% de desconto no Nubank.</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-        {/* 4. Metas & Cofres */ }
-  <div className="px-6 pb-12">
-    <h3 className="font-bold text-slate-900 dark:text-zinc-100 mb-4 flex items-center gap-2">
-      Metas & Cofres
-      <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-[10px] px-2 py-0.5 rounded-full font-bold">{goals.length} Ativos</span>
-    </h3>
+        {/* 4. Metas & Cofres */}
+        <div className="px-6 pb-12 mt-6">
+          <h3 className="font-bold text-slate-900 dark:text-zinc-100 mb-4 flex items-center gap-2">
+            Metas & Cofres
+            <span className="bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 text-[10px] px-2 py-0.5 rounded-full font-bold">{goals.length} Ativos</span>
+          </h3>
 
-    <div className="grid grid-cols-2 gap-4">
-      {goals.map(goal => {
-        const percentage = Math.round((goal.current / goal.target) * 100);
-        return (
-          <div key={goal.id} className="bg-white dark:bg-[#18181b] rounded-2xl p-4 shadow-sm border border-zinc-100 dark:border-zinc-800 hover:border-violet-200 dark:hover:border-violet-800/50 hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-zinc-100 dark:bg-zinc-800">
-              <div className={`h-full ${goal.color}`} style={{ width: `${percentage}%` }}></div>
-            </div>
+          <div className="grid grid-cols-2 gap-4">
+            {goals.map(goal => {
+              const percentage = Math.round((goal.current / goal.target) * 100);
+              return (
+                <div key={goal.id} className="bg-white dark:bg-[#18181b] rounded-2xl p-4 shadow-sm border border-zinc-100 dark:border-zinc-800 hover:border-violet-200 dark:hover:border-violet-800/50 hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-zinc-100 dark:bg-zinc-800">
+                    <div className={`h-full ${goal.color}`} style={{ width: `${percentage}%` }}></div>
+                  </div>
 
-            <div className="flex justify-between items-start mb-3">
-              <div className={`size-10 rounded-full ${goal.color} bg-opacity-10 flex items-center justify-center text-${goal.color.replace('bg-', '')}-600 dark:text-white`}>
-                <span className="material-symbols-outlined text-slate-800 dark:text-white">{goal.icon}</span>
+                  <div className="flex justify-between items-start mb-3">
+                    <div className={`size-10 rounded-full ${goal.color} bg-opacity-10 flex items-center justify-center text-${goal.color.replace('bg-', '')}-600 dark:text-white`}>
+                      <span className="material-symbols-outlined text-slate-800 dark:text-white">{goal.icon}</span>
+                    </div>
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="material-symbols-outlined text-zinc-300 dark:text-zinc-600 text-[18px]">edit</span>
+                    </div>
+                  </div>
+
+                  <h4 className="font-bold text-slate-900 dark:text-zinc-100 text-sm mb-1 truncate">{goal.name}</h4>
+                  <p className={`text-xs text-zinc-400 mb-3 ${privacyMode ? 'blur-sm' : ''}`}>Faltam R$ {(goal.target - goal.current).toLocaleString()}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="font-black text-slate-800 dark:text-zinc-200">{percentage}%</span>
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase">
+                      {percentage >= 100 ? 'Concluído!' : 'Em progresso'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+
+            <button
+              onClick={() => setShowAddGoal(true)}
+              className="rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center text-zinc-400 hover:border-violet-500 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition-colors p-4 min-h-[140px] group"
+            >
+              <div className="size-10 bg-zinc-50 dark:bg-zinc-900 group-hover:bg-white dark:group-hover:bg-zinc-800 rounded-full flex items-center justify-center mb-2 transition-colors shadow-sm">
+                <span className="material-symbols-outlined text-2xl">add</span>
               </div>
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="material-symbols-outlined text-zinc-300 dark:text-zinc-600 text-[18px]">edit</span>
-              </div>
-            </div>
-
-            <h4 className="font-bold text-slate-900 dark:text-zinc-100 text-sm mb-1 truncate">{goal.name}</h4>
-            <p className={`text-xs text-zinc-400 mb-3 ${privacyMode ? 'blur-sm' : ''}`}>Faltam R$ {(goal.target - goal.current).toLocaleString()}</p>
-            <div className="flex justify-between items-center">
-              <span className="font-black text-slate-800 dark:text-zinc-200">{percentage}%</span>
-              <span className="text-[10px] font-bold text-zinc-400 uppercase">
-                {percentage >= 100 ? 'Concluído!' : 'Em progresso'}
-              </span>
-            </div>
+              <span className="text-xs font-bold">Nova Meta</span>
+            </button>
           </div>
-        );
-      })}
-
-      <button
-        onClick={() => setShowAddGoal(true)}
-        className="rounded-2xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 flex flex-col items-center justify-center text-zinc-400 hover:border-violet-500 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-900/10 transition-colors p-4 min-h-[140px] group"
-      >
-        <div className="size-10 bg-zinc-50 dark:bg-zinc-900 group-hover:bg-white dark:group-hover:bg-zinc-800 rounded-full flex items-center justify-center mb-2 transition-colors shadow-sm">
-          <span className="material-symbols-outlined text-2xl">add</span>
         </div>
-        <span className="text-xs font-bold">Nova Meta</span>
-      </button>
-    </div>
-  </div>
-      </div >
 
-  {/* Modals */ }
-  < AddCardModal isOpen = { showAddCard } onClose = {() => setShowAddCard(false)} onSave = { addCard } />
-    <AddGoalModal isOpen={showAddGoal} onClose={() => setShowAddGoal(false)} onSave={addGoal} />
-
-{/* UPGRADE MODAL - GROWTH FEATURE */ }
-{
-  showUpgradeModal && (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowUpgradeModal(false)} />
-      <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl w-full max-w-sm p-8 text-center animate-fade-in shadow-2xl border border-white/10">
-        <div className="size-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
-          <span className="material-symbols-outlined text-4xl text-yellow-400">diamond</span>
-        </div>
-        <h2 className="text-2xl font-black mb-2">Desbloqueie o Infinito</h2>
-        <p className="text-slate-300 mb-6">O plano gratuito permite até 2 cartões. Remova os limites e tenha controle total.</p>
-
-        <ul className="text-left space-y-3 mb-8 bg-black/20 p-4 rounded-xl">
-          <li className="flex gap-2 text-sm"><span className="text-emerald-400">✓</span> Cartões Ilimitados</li>
-          <li className="flex gap-2 text-sm"><span className="text-emerald-400">✓</span> IA de Categorização</li>
-          <li className="flex gap-2 text-sm"><span className="text-emerald-400">✓</span> Backups na Nuvem</li>
-        </ul>
-
-        <button
-          onClick={handleUpgradeFromModal}
-          className="w-full py-3 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl font-bold shadow-lg shadow-indigo-500/30 hover:scale-105 transition-transform"
-        >
-          Virar Pro (R$ 29,90)
-        </button>
-        <button onClick={() => setShowUpgradeModal(false)} className="mt-4 text-xs text-slate-400 hover:text-white">Agora não</button>
       </div>
+
+      {/* Modals */}
+      <AddCardModal isOpen={showAddCard} onClose={() => setShowAddCard(false)} onSave={addCard} />
+      <AddGoalModal isOpen={showAddGoal} onClose={() => setShowAddGoal(false)} onSave={addGoal} />
+
+      {/* UPGRADE MODAL - GROWTH FEATURE */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowUpgradeModal(false)} />
+          <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl w-full max-w-sm p-8 text-center animate-fade-in shadow-2xl border border-white/10">
+            <div className="size-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="material-symbols-outlined text-4xl text-yellow-400">diamond</span>
+            </div>
+            <h2 className="text-2xl font-black mb-2">Desbloqueie o Infinito</h2>
+            <p className="text-slate-300 mb-6">O plano gratuito permite até 2 cartões. Remova os limites e tenha controle total.</p>
+
+            <ul className="text-left space-y-3 mb-8 bg-black/20 p-4 rounded-xl">
+              <li className="flex gap-2 text-sm"><span className="text-emerald-400">✓</span> Cartões Ilimitados</li>
+              <li className="flex gap-2 text-sm"><span className="text-emerald-400">✓</span> IA de Categorização</li>
+              <li className="flex gap-2 text-sm"><span className="text-emerald-400">✓</span> Backups na Nuvem</li>
+            </ul>
+
+            <button
+              onClick={handleUpgradeFromModal}
+              className="w-full py-3 bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl font-bold shadow-lg shadow-indigo-500/30 hover:scale-105 transition-transform"
+            >
+              Virar Pro (R$ 29,90)
+            </button>
+            <button onClick={() => setShowUpgradeModal(false)} className="mt-4 text-xs text-slate-400 hover:text-white">Agora não</button>
+          </div>
+        </div>
+      )}
     </div>
-  )
-}
-    </div >
   );
 };
-
-import { CreditCard, FinancialGoal } from '../types';
 
 // --- MODALS (Reused) ---
 const AddCardModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (c: Omit<CreditCard, 'id'>) => void }> = ({ isOpen, onClose, onSave }) => {
@@ -425,7 +422,7 @@ const AddCardModal: React.FC<{ isOpen: boolean; onClose: () => void; onSave: (c:
         <h3 className="text-lg font-bold mb-4 text-slate-900 dark:text-zinc-100">Adicionar Cartão</h3>
         <div className="space-y-3">
           <input className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-slate-900 dark:text-zinc-100" placeholder="Apelido do Cartão" value={name} onChange={e => setName(e.target.value)} />
-          <input className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-slate-900 dark:text-zinc-100" type="number" placeholder="Limite (R$)" value={limit} onChange={e => setLimit(e.target.value)} />
+          <input className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-slate-900 dark:text-zinc-100" type="number" placeholder="Limite ({R$})" value={limit} onChange={e => setLimit(e.target.value)} />
           <input className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-slate-900 dark:text-zinc-100" type="text" maxLength={4} placeholder="Últimos 4 dígitos" value={lastDigits} onChange={e => setLastDigits(e.target.value)} />
           <select className="w-full bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg p-2 text-slate-900 dark:text-zinc-100" value={brand} onChange={e => setBrand(e.target.value as CreditCard['brand'])}>
             <option value="mastercard">Mastercard</option>

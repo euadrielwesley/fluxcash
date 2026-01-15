@@ -31,19 +31,7 @@ interface ServiceDefinition {
 }
 
 const SERVICES: ServiceDefinition[] = [
-  {
-    id: 'supabase',
-    name: 'Supabase Database',
-    category: 'sync',
-    icon: 'database',
-    color: 'text-emerald-500',
-    desc: 'Sincronização em nuvem e backup em tempo real.',
-    fields: [
-      { key: 'url', label: 'Project URL', type: 'text', placeholder: 'https://xyz.supabase.co' },
-      { key: 'anonKey', label: 'Anon Public Key', type: 'secure', placeholder: 'eyJhbG...' }
-    ],
-    canTest: false // Tested via SystemHealthWidget
-  },
+
   {
     id: 'openai',
     name: 'OpenAI',
@@ -149,7 +137,7 @@ const IntegrationsPage: React.FC<IntegrationsPageProps> = ({ onBack, onMenuClick
           <div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-zinc-100 tracking-tight flex items-center gap-2">
               <span className="material-symbols-outlined text-emerald-500">lock</span>
-              Integrações
+              Integrações (API)
             </h2>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">Gerencie chaves de API e serviços conectados. Seus dados são criptografados localmente.</p>
           </div>
