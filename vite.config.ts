@@ -1,6 +1,8 @@
 import path from 'path';
 import { defineConfig, loadEnv, splitVendorChunkPlugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import viteCompression from 'vite-plugin-compression';
+import { ViteImageOptimizer } from 'vite-plugin-image-optimizer';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
@@ -9,7 +11,16 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       host: '0.0.0.0',
     },
-    plugins: [react(), splitVendorChunkPlugin()],
+    plugins: [
+      react(),
+      splitVendorChunkPlugin(),
+      viteCompression({
+        algorithm: 'gzip',
+        ext: '.gz',
+        threshold: 10240, // Only compress if > 10kb
+        deleteOriginFile: false
+      })
+    ],
     build: {
       sourcemap: false,
       minify: 'terser',

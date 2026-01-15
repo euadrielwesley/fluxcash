@@ -171,12 +171,31 @@ const TransactionDetailModal: React.FC<{ transaction: Transaction; onClose: () =
   );
 };
 
-// --- SPREADSHEET VIEW COMPONENT ---
+// --- SPREADSHEET VIEW COMPONENT (VIRTUALIZED) ---
+import { FixedSizeList as List } from 'react-window';
+
 const SpreadsheetView: React.FC<{ searchTerm: string }> = ({ searchTerm }) => {
   const { transactions, editTransaction, removeTransaction, customCategories, addCustomCategory } = useTransactions();
   const { pushNotification } = useNotification();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showBulkCategory, setShowBulkCategory] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateSize = () => {
+      if (containerRef.current) {
+        setDimensions({
+          width: containerRef.current.offsetWidth,
+          height: containerRef.current.offsetHeight
+        });
+      }
+    };
+    updateSize();
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
 
   const visibleTransactions = useMemo(() => {
     if (!searchTerm) return transactions;
@@ -242,76 +261,89 @@ const SpreadsheetView: React.FC<{ searchTerm: string }> = ({ searchTerm }) => {
     }
   };
 
+  const Row = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+    const tx = visibleTransactions[index];
+    const isSelected = selectedIds.includes(tx.id);
+
+    return (
+      <div style={style} className={`flex items-center border-b border-zinc-100 dark:border-zinc-800 transition-colors ${isSelected ? 'bg-violet-50/50 dark:bg-violet-900/10' : 'hover:bg-zinc-50 dark:hover:bg-zinc-800/50'}`}>
+        <div className="w-10 px-4 shrink-0 flex items-center justify-center">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => toggleSelection(tx.id)}
+            className="rounded border-zinc-300 dark:border-zinc-600 text-primary focus:ring-primary bg-white dark:bg-zinc-800 cursor-pointer"
+          />
+        </div>
+        <div className="w-32 px-2 text-sm text-zinc-500 dark:text-zinc-400 shrink-0 border-r border-zinc-50 dark:border-zinc-800 truncate">
+          {new Date(tx.dateIso || new Date()).toLocaleDateString('pt-BR')}
+        </div>
+        <div className="flex-1 px-2 text-sm font-medium text-slate-700 dark:text-zinc-200 border-r border-zinc-50 dark:border-zinc-800 min-w-[200px]">
+          <EditableCell
+            value={tx.title}
+            onSave={(val) => editTransaction(tx.id, { title: val.toString() })}
+          />
+        </div>
+        <div className="w-40 px-2 text-sm text-zinc-600 dark:text-zinc-400 shrink-0 border-r border-zinc-50 dark:border-zinc-800">
+          <EditableCell
+            value={tx.category}
+            onSave={(val) => editTransaction(tx.id, { category: val.toString() })}
+          />
+        </div>
+        <div className="w-40 px-2 text-right text-sm font-bold shrink-0 border-r border-zinc-50 dark:border-zinc-800">
+          <div className={tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-zinc-100'}>
+            <EditableCell
+              type="number"
+              align="right"
+              value={tx.amount}
+              onSave={(val) => editTransaction(tx.id, { amount: Number(val), type: Number(val) > 0 ? 'income' : 'expense' })}
+            />
+          </div>
+        </div>
+        <div className="w-20 px-2 flex justify-center shrink-0">
+          <button
+            onClick={() => removeTransaction(tx.id)}
+            className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-zinc-300 hover:text-rose-500 rounded transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">delete</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="relative h-full flex flex-col bg-white dark:bg-[#18181b]">
-      {/* Table Header */}
-      <div className="flex-1 overflow-auto no-scrollbar pb-32">
-        <table className="w-full text-left border-collapse">
-          <thead className="bg-zinc-50 dark:bg-zinc-900 sticky top-0 z-10 shadow-sm">
-            <tr>
-              <th className="p-4 border-b border-zinc-200 dark:border-zinc-800 w-10">
-                <input
-                  type="checkbox"
-                  onChange={handleSelectAll}
-                  checked={selectedIds.length === visibleTransactions.length && visibleTransactions.length > 0}
-                  className="rounded border-zinc-300 dark:border-zinc-600 text-primary focus:ring-primary bg-white dark:bg-zinc-800"
-                />
-              </th>
-              <th className="p-4 border-b border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase">Data</th>
-              <th className="p-4 border-b border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase">Descrição</th>
-              <th className="p-4 border-b border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase">Categoria</th>
-              <th className="p-4 border-b border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase text-right">Valor</th>
-              <th className="p-4 border-b border-zinc-200 dark:border-zinc-800 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase text-center">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
-            {visibleTransactions.map(tx => (
-              <tr key={tx.id} className={`hover:bg-zinc-50 dark:hover:bg-zinc-800/50 group transition-colors ${selectedIds.includes(tx.id) ? 'bg-violet-50/50 dark:bg-violet-900/10' : ''}`}>
-                <td className="p-4">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.includes(tx.id)}
-                    onChange={() => toggleSelection(tx.id)}
-                    className="rounded border-zinc-300 dark:border-zinc-600 text-primary focus:ring-primary bg-white dark:bg-zinc-800"
-                  />
-                </td>
-                <td className="p-2 border-r border-zinc-50 dark:border-zinc-800 w-32 text-sm text-zinc-500 dark:text-zinc-400">
-                  {new Date(tx.dateIso || new Date()).toLocaleDateString('pt-BR')}
-                </td>
-                <td className="p-2 border-r border-zinc-50 dark:border-zinc-800 max-w-xs text-sm font-medium text-slate-700 dark:text-zinc-200">
-                  <EditableCell
-                    value={tx.title}
-                    onSave={(val) => editTransaction(tx.id, { title: val.toString() })}
-                  />
-                </td>
-                <td className="p-2 border-r border-zinc-50 dark:border-zinc-800 w-40 text-sm text-zinc-600 dark:text-zinc-400">
-                  <EditableCell
-                    value={tx.category}
-                    onSave={(val) => editTransaction(tx.id, { category: val.toString() })}
-                  />
-                </td>
-                <td className="p-2 border-r border-zinc-50 dark:border-zinc-800 w-40 text-right text-sm font-bold">
-                  <div className={tx.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-zinc-100'}>
-                    <EditableCell
-                      type="number"
-                      align="right"
-                      value={tx.amount}
-                      onSave={(val) => editTransaction(tx.id, { amount: Number(val), type: Number(val) > 0 ? 'income' : 'expense' })}
-                    />
-                  </div>
-                </td>
-                <td className="p-2 text-center w-20">
-                  <button
-                    onClick={() => removeTransaction(tx.id)}
-                    className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/20 text-zinc-300 hover:text-rose-500 rounded transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">delete</span>
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Header (Flexbox mimicking table header) */}
+      <div className="flex items-center bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 shadow-sm shrink-0">
+        <div className="w-10 px-4 py-3 shrink-0 flex items-center justify-center">
+          <input
+            type="checkbox"
+            onChange={handleSelectAll}
+            checked={selectedIds.length === visibleTransactions.length && visibleTransactions.length > 0}
+            className="rounded border-zinc-300 dark:border-zinc-600 text-primary focus:ring-primary bg-white dark:bg-zinc-800 cursor-pointer"
+          />
+        </div>
+        <div className="w-32 px-2 py-3 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase shrink-0">Data</div>
+        <div className="flex-1 px-2 py-3 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase min-w-[200px]">Descrição</div>
+        <div className="w-40 px-2 py-3 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase shrink-0">Categoria</div>
+        <div className="w-40 px-2 py-3 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase text-right shrink-0">Valor</div>
+        <div className="w-20 px-2 py-3 text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase text-center shrink-0">Ações</div>
+      </div>
+
+      {/* Virtualized Body */}
+      <div className="flex-1" ref={containerRef}>
+        {dimensions.height > 0 && (
+          <List
+            height={dimensions.height}
+            width={dimensions.width}
+            itemCount={visibleTransactions.length}
+            itemSize={50} // Fixed row height
+            className="no-scrollbar"
+          >
+            {Row}
+          </List>
+        )}
       </div>
 
       <AnimatePresence>
@@ -372,9 +404,7 @@ const SpreadsheetView: React.FC<{ searchTerm: string }> = ({ searchTerm }) => {
               >
                 <span className="material-symbols-outlined text-[20px]">delete</span>
               </button>
-
               <div className="h-8 w-px bg-white/20 mx-2"></div>
-
               <button
                 onClick={() => setSelectedIds([])}
                 className="p-2 hover:bg-white/10 rounded-full text-zinc-400 hover:text-white transition-colors"

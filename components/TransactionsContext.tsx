@@ -163,43 +163,51 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
         }
       })();
 
-      // B. Secondary Data (Parallel - Don't block UI)
-      supabase.from('credit_cards').select('*').then(({ data }) => {
-        if (data) {
-          const mapped = data.map(c => ({
+      // B. Secondary Data (Parallel - Promise.allSettled for robustness)
+      Promise.allSettled([
+        supabase.from('credit_cards').select('*'),
+        supabase.from('financial_goals').select('*'),
+        supabase.from('debts').select('*'),
+        supabase.from('ai_rules').select('*'),
+        supabase.from('profiles').select('*').eq('id', user.id).single()
+      ]).then((results) => {
+        const [cardsRes, goalsRes, debtsRes, aiRulesRes, profileRes] = results;
+
+        // Cards
+        if (cardsRes.status === 'fulfilled' && cardsRes.value.data) {
+          const mapped = cardsRes.value.data.map(c => ({
             id: c.id, name: c.name, brand: c.brand, limit: Number(c.limit), bill: Number(c.bill), color: c.color, dueDate: c.due_date, lastDigits: c.last_digits
           }));
           setCards(mapped);
           localStorage.setItem(`flux_cards_${user.id}`, JSON.stringify(mapped));
         }
-      });
 
-      supabase.from('financial_goals').select('*').then(({ data }) => {
-        if (data) {
-          const mapped = data.map(g => ({
+        // Goals
+        if (goalsRes.status === 'fulfilled' && goalsRes.value.data) {
+          const mapped = goalsRes.value.data.map(g => ({
             id: g.id, name: g.name, target: Number(g.target), current: Number(g.current), deadline: g.deadline, icon: g.icon, color: g.color
           }));
           setGoals(mapped);
           localStorage.setItem(`flux_goals_${user.id}`, JSON.stringify(mapped));
         }
-      });
 
-      supabase.from('debts').select('*').then(({ data }) => {
-        if (data) {
-          const mapped = data.map(d => ({
+        // Debts
+        if (debtsRes.status === 'fulfilled' && debtsRes.value.data) {
+          const mapped = debtsRes.value.data.map(d => ({
             id: d.id, name: d.name, bank: d.bank, total_installments: d.total_installments, paid_installments: d.paid_installments, original_debt: Number(d.original_debt), current_balance: Number(d.current_balance), value_parcel: Number(d.value_parcel), color: d.color
           }));
           setDebts(mapped);
           localStorage.setItem(`flux_debts_${user.id}`, JSON.stringify(mapped));
         }
-      });
 
-      supabase.from('ai_rules').select('*').then(({ data }) => {
-        if (data) setAiRules(data);
-      });
+        // AI Rules
+        if (aiRulesRes.status === 'fulfilled' && aiRulesRes.value.data) {
+          setAiRules(aiRulesRes.value.data);
+        }
 
-      supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data }) => {
-        if (data) {
+        // Profile Update
+        if (profileRes.status === 'fulfilled' && profileRes.value.data) {
+          const data = profileRes.value.data;
           const updatedProfile = { ...localProfile!, xp: data.xp, level: data.level, hasOnboarding: data.has_onboarding, plan: { ...localProfile?.plan, name: data.plan_name || 'Free' } };
           setLocalProfile(updatedProfile);
           localStorage.setItem(`flux_profile_${user.id}`, JSON.stringify(updatedProfile));

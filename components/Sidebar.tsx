@@ -21,11 +21,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onNavig
   return (
     <>
       {/* Mobile Overlay (Apenas Mobile) */}
-      <div 
+      <div
         className={`fixed inset-0 bg-zinc-900/60 z-[60] lg:hidden backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={onClose}
       />
-      
+
       {/* 
         ASIDE CONTAINER 
       */}
@@ -35,10 +35,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onNavig
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         ${isCollapsed ? 'lg:w-[88px]' : 'lg:w-[280px] w-[280px]'}
       `} id="sidebar-menu">
-        
+
         {/* 1. Header & Brand */}
         <div className={`h-[88px] flex items-center shrink-0 transition-all duration-300 ${isCollapsed ? 'justify-center px-0' : 'justify-between px-6'}`}>
-          
+
           {/* Logo Group */}
           <div className="flex items-center gap-3 overflow-hidden">
             <div className={`
@@ -47,7 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onNavig
             `}>
               <span className="material-symbols-outlined text-[24px]">bolt</span>
             </div>
-            
+
             <h1 className={`text-slate-900 dark:text-zinc-100 text-xl font-bold tracking-tight font-sans whitespace-nowrap transition-all duration-300 ${isCollapsed ? 'opacity-0 w-0 translate-x-[-10px]' : 'opacity-100 w-auto translate-x-0'}`}>
               FluxCash
             </h1>
@@ -55,19 +55,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onNavig
 
           {/* Toggle Button (Desktop Only) */}
           {!isCollapsed && (
-             <button 
-               onClick={toggleCollapse}
-               className="hidden lg:flex p-2 rounded-lg text-zinc-400 hover:text-slate-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-               title="Recolher Menu"
-             >
-               <span className="material-symbols-outlined text-[20px]">dock_to_left</span>
-             </button>
+            <button
+              onClick={toggleCollapse}
+              className="hidden lg:flex p-2 rounded-lg text-zinc-400 hover:text-slate-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              title="Recolher Menu"
+            >
+              <span className="material-symbols-outlined text-[20px]">dock_to_left</span>
+            </button>
           )}
         </div>
 
         {/* 2. Hero CTA Button */}
         <div className={`mt-2 mb-6 transition-all duration-500 ${isCollapsed ? 'px-4' : 'px-6'}`}>
-          <button 
+          <button
             id="quick-add-sidebar"
             onClick={onOpenModal}
             className={`
@@ -78,63 +78,63 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onNavig
               ${isCollapsed ? 'size-12 rounded-2xl mx-auto' : 'w-full h-12 rounded-xl gap-3'}
             `}
           >
-             <span className="material-symbols-outlined text-[24px] group-hover:rotate-90 transition-transform duration-500">add</span>
-             
-             <span className={`font-bold whitespace-nowrap transition-all duration-500 ${isCollapsed ? 'w-0 opacity-0 absolute' : 'w-auto opacity-100 static'}`}>
-               Novo
-             </span>
+            <span className="material-symbols-outlined text-[24px] group-hover:rotate-90 transition-transform duration-500">add</span>
+
+            <span className={`font-bold whitespace-nowrap transition-all duration-500 ${isCollapsed ? 'w-0 opacity-0 absolute' : 'w-auto opacity-100 static'}`}>
+              Novo
+            </span>
           </button>
         </div>
 
         {/* 3. Modern Navigation */}
         <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto no-scrollbar py-2">
-          
-          <NavItem 
-            icon="grid_view" 
-            label="Visão Geral" 
-            active={currentView === 'dashboard'} 
+
+          <NavItem
+            icon="grid_view"
+            label="Visão Geral"
+            active={currentView === 'dashboard'}
             collapsed={isCollapsed}
-            onClick={() => onNavigate('dashboard')} 
-          />
-          
-          {/* NEW ITEM: MISSIONS */}
-          <NavItem 
-            icon="target" 
-            label="Missões Diárias" 
-            active={currentView === 'gamification'} 
-            collapsed={isCollapsed}
-            onClick={() => onNavigate('gamification')} 
+            onClick={() => onNavigate('dashboard')}
           />
 
-          <NavItem 
-            icon="account_balance_wallet" 
-            label="Carteira" 
-            active={currentView === 'wallet'} 
+          {/* NEW ITEM: MISSIONS */}
+          <NavItem
+            icon="target"
+            label="Missões Diárias"
+            active={currentView === 'gamification'}
             collapsed={isCollapsed}
-            onClick={() => onNavigate('wallet')} 
+            onClick={() => onNavigate('gamification')}
           />
-          <NavItem 
-            icon="receipt_long" 
-            label="Extrato" 
-            active={currentView === 'transactions'} 
+
+          <NavItem
+            icon="account_balance_wallet"
+            label="Carteira"
+            active={currentView === 'wallet'}
             collapsed={isCollapsed}
-            onClick={() => onNavigate('transactions')} 
+            onClick={() => onNavigate('wallet')}
+          />
+          <NavItem
+            icon="receipt_long"
+            label="Extrato"
+            active={currentView === 'transactions'}
+            collapsed={isCollapsed}
+            onClick={() => onNavigate('transactions')}
           />
 
           <SectionDivider collapsed={isCollapsed} />
 
-          <NavItem 
-            icon="trending_up" 
-            label="Entradas" 
-            active={currentView === 'income'} 
+          <NavItem
+            icon="trending_up"
+            label="Entradas"
+            active={currentView === 'income'}
             collapsed={isCollapsed}
             onClick={() => onNavigate('income')}
             colorTheme="emerald"
           />
-          <NavItem 
-            icon="trending_down" 
-            label="Saídas" 
-            active={currentView === 'expenses'} 
+          <NavItem
+            icon="trending_down"
+            label="Saídas"
+            active={currentView === 'expenses'}
             collapsed={isCollapsed}
             onClick={() => onNavigate('expenses')}
             colorTheme="rose"
@@ -142,27 +142,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onNavig
 
           <SectionDivider collapsed={isCollapsed} />
 
-          <NavItem 
-            icon="monitoring" 
-            label="Relatórios" 
-            active={currentView === 'analytics'} 
+          <NavItem
+            icon="monitoring"
+            label="Relatórios"
+            active={currentView === 'analytics'}
             collapsed={isCollapsed}
-            onClick={() => onNavigate('analytics')} 
+            onClick={() => onNavigate('analytics')}
           />
         </nav>
 
         {/* 4. Footer & Profile */}
         <div className="p-4 border-t border-zinc-100 dark:border-zinc-800 bg-white dark:bg-[#09090b] relative">
-          
+
           {/* Expand Toggle (Visible only when collapsed) */}
           {isCollapsed && (
-             <button 
-               onClick={toggleCollapse}
-               className="hidden lg:flex absolute -top-3 left-1/2 -translate-x-1/2 size-7 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full items-center justify-center text-zinc-400 hover:text-violet-600 shadow-sm transition-all hover:scale-110 z-10"
-               title="Expandir Menu"
-             >
-               <span className="material-symbols-outlined text-[16px]">dock_to_right</span>
-             </button>
+            <button
+              onClick={toggleCollapse}
+              className="hidden lg:flex absolute -top-3 left-1/2 -translate-x-1/2 size-7 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-full items-center justify-center text-zinc-400 hover:text-violet-600 shadow-sm transition-all hover:scale-110 z-10"
+              title="Expandir Menu"
+            >
+              <span className="material-symbols-outlined text-[16px]">dock_to_right</span>
+            </button>
           )}
 
           <div className={`
@@ -171,23 +171,23 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose, currentView, onNavig
           `}>
             {/* Avatar */}
             <div className="relative shrink-0">
-               <img src={userProfile.avatarUrl || "https://ui-avatars.com/api/?background=random"} alt="Profile" className="size-10 rounded-full object-cover border border-zinc-100 dark:border-zinc-800 shadow-sm" />
-               <span className="absolute bottom-0 right-0 size-2.5 bg-violet-500 border-2 border-white dark:border-zinc-950 rounded-full"></span>
+              <img src={userProfile.avatarUrl || "https://ui-avatars.com/api/?background=random"} alt="Profile" className="size-10 rounded-full object-cover border border-zinc-100 dark:border-zinc-800 shadow-sm" />
+              <span className="absolute bottom-0 right-0 size-2.5 bg-violet-500 border-2 border-white dark:border-zinc-950 rounded-full"></span>
             </div>
-            
+
             {/* Info & Settings */}
             <div className={`flex items-center justify-between flex-1 min-w-0 transition-all duration-300 ${isCollapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
-               <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-bold text-slate-800 dark:text-zinc-100 truncate">{userProfile.name}</span>
-                  <span className="text-[11px] text-zinc-400 font-medium truncate">{userProfile.plan?.name || 'Free'}</span>
-               </div>
-               
-               <button 
-                 onClick={(e) => { e.stopPropagation(); onNavigate('settings'); }}
-                 className="p-1.5 text-zinc-400 hover:text-slate-600 dark:hover:text-zinc-200 hover:bg-zinc-200/50 rounded-lg transition-colors"
-               >
-                 <span className="material-symbols-outlined text-[20px]">settings</span>
-               </button>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-bold text-slate-800 dark:text-zinc-100 truncate">{userProfile.name}</span>
+                <span className="text-[11px] text-zinc-400 font-medium truncate">{userProfile.plan?.name || 'Free'}</span>
+              </div>
+
+              <button
+                onClick={(e) => { e.stopPropagation(); onNavigate('settings'); }}
+                className="p-1.5 text-zinc-400 hover:text-slate-600 dark:hover:text-zinc-200 hover:bg-zinc-200/50 rounded-lg transition-colors"
+              >
+                <span className="material-symbols-outlined text-[20px]">settings</span>
+              </button>
             </div>
           </div>
         </div>
@@ -211,34 +211,51 @@ interface NavItemProps {
   colorTheme?: 'emerald' | 'rose' | 'amber' | 'blue';
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon, label, active, collapsed, onClick, colorTheme }) => {
-  
+const NavItem: React.FC<NavItemProps & { view?: string }> = ({ icon, label, active, collapsed, onClick, colorTheme, view }) => {
+
   let activeClass = 'bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400';
   let iconClass = 'text-violet-600 dark:text-violet-400';
 
   if (active) {
     if (colorTheme === 'emerald') {
-        activeClass = 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400';
-        iconClass = 'text-emerald-600 dark:text-emerald-400';
+      activeClass = 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400';
+      iconClass = 'text-emerald-600 dark:text-emerald-400';
     } else if (colorTheme === 'rose') {
-        activeClass = 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400';
-        iconClass = 'text-rose-600 dark:text-rose-400';
+      activeClass = 'bg-rose-50 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400';
+      iconClass = 'text-rose-600 dark:text-rose-400';
     }
   }
 
+  const handleMouseEnter = () => {
+    if (!view) return;
+    const routes: Record<string, () => Promise<any>> = {
+      'transactions': () => import('./TransactionsPage'),
+      'wallet': () => import('./WalletPage'),
+      'analytics': () => import('./AnalyticsPage'),
+      'settings': () => import('./SettingsPage'),
+      'income': () => import('./IncomePage'),
+      'expenses': () => import('./ExpensesPage'),
+      'gamification': () => import('./Gamification')
+    };
+    if (routes[view]) {
+      routes[view]();
+    }
+  };
+
   return (
-    <button 
+    <button
       onClick={onClick}
+      onMouseEnter={handleMouseEnter}
       className={`
         relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group outline-none
-        ${active 
-          ? `${activeClass} font-bold shadow-sm` 
+        ${active
+          ? `${activeClass} font-bold shadow-sm`
           : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 hover:text-slate-900 dark:hover:text-zinc-200 font-medium'
         }
         ${collapsed ? 'justify-center' : ''}
       `}
     >
-      <span 
+      <span
         className={`material-symbols-outlined text-[24px] transition-all duration-300 shrink-0
           ${active ? 'filled' : ''}
           ${active ? iconClass : ''}
@@ -247,7 +264,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, active, collapsed, onCli
       >
         {icon}
       </span>
-      
+
       <span className={`text-[14px] whitespace-nowrap transition-all duration-300 origin-left ${collapsed ? 'w-0 opacity-0 hidden' : 'w-auto opacity-100'}`}>
         {label}
       </span>

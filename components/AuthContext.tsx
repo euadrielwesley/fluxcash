@@ -75,6 +75,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     // 1. Check active session on mount with timeout safety
     const checkSession = async () => {
+      // OTIMIZAÇÃO: Carregar cache imediatamente (Melhora FCP/TTI)
+      const cachedProfile = localStorage.getItem('flux_user_profile');
+      if (cachedProfile) {
+        try {
+          setUser(JSON.parse(cachedProfile));
+          setIsLoading(false); // Libera UI instantaneamente
+        } catch (e) {
+          console.warn('Invalid cached profile', e);
+        }
+      }
+
       try {
         // Enforce a timeout to prevent infinite loading screen
         const sessionPromise = supabase.auth.getSession();
@@ -89,6 +100,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (session?.user) {
           const profile = await formatUser(session.user);
           setUser(profile);
+          // OTIMIZAÇÃO: Salvar cache atualizado
+          localStorage.setItem('flux_user_profile', JSON.stringify(profile));
+        } else {
+          if (!isDemo) localStorage.removeItem('flux_user_profile');
         }
       } catch (error) {
         console.error('Session check failed or timeout:', error);
@@ -104,10 +119,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (session?.user) {
         const profile = await formatUser(session.user);
         setUser(profile);
+        localStorage.setItem('flux_user_profile', JSON.stringify(profile));
         setIsDemo(false);
       } else if (!isDemo) {
         // Only clear if not in demo mode (controlled manually)
         setUser(null);
+        localStorage.removeItem('flux_user_profile');
       }
       setIsLoading(false);
     });
