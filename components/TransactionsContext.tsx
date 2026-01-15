@@ -497,6 +497,7 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
       if (data.name) payload.name = data.name;
       if (data.avatarUrl) payload.avatar_url = data.avatarUrl;
       if (data.profession) payload.profession = data.profession;
+      if (data.hasOnboarding !== undefined) payload.has_onboarding = data.hasOnboarding;
 
       if (Object.keys(payload).length > 0) {
         const { error } = await supabase.from('profiles').update(payload).eq('id', user.id);
@@ -530,19 +531,48 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
     if (user && !isDemo) await supabase.from('custom_categories').insert({ user_id: user.id, name: category });
   }, [user, isDemo]);
 
-  const exportData = useCallback((format: 'json' | 'csv') => {
-    if (!transactions.length) {
+  const exportData = useCallback(async (format: 'json' | 'csv') => {
+    if (!transactions.length && !user) {
       pushNotification({ title: 'Sem dados', message: 'Faça transações antes de exportar.', type: 'info', category: 'system' });
       return;
     }
-    const dataStr = format === 'json' ? JSON.stringify(transactions, null, 2) : transactions.map(t => `${t.dateIso},${t.title},${t.amount},${t.category},${t.type}`).join('\n');
+
+    pushNotification({ title: 'Exportando...', message: 'Gerando arquivo completo...', type: 'info', category: 'system' });
+
+    let dataToExport = transactions;
+
+    // If production, fetch ALL data (bypass 300 limit)
+    if (user && !isDemo) {
+      try {
+        const { data, error } = await supabase.from('transactions').select('*').eq('user_id', user.id).order('date_iso', { ascending: false });
+        if (error) throw error;
+        if (data) {
+          dataToExport = data.map(t => ({
+            id: t.id, title: t.title, amount: Number(t.amount), type: t.type, category: t.category, account: t.account, dateIso: t.date_iso, isRecurring: t.is_recurring, installment: t.installment, icon: t.icon, colorClass: t.color_class
+          }));
+        }
+      } catch (e) {
+        console.error("Export fetch error", e);
+        pushNotification({ title: 'Erro', message: 'Falha ao baixar histórico completo. Usando dados locais.', type: 'warning', category: 'system' });
+      }
+    }
+
+    const dataStr = format === 'json'
+      ? JSON.stringify(dataToExport, null, 2)
+      : ['Data,Descrição,Valor,Categoria,Tipo,Conta', ...dataToExport.map(t => `${t.dateIso},"${t.title}",${t.amount},"${t.category}",${t.type},"${t.account}"`)].join('\n');
+
     const blob = new Blob([dataStr], { type: format === 'json' ? 'application/json' : 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `fluxcash_export_${new Date().toISOString().split('T')[0]}.${format}`;
+    a.download = `fluxcash_full_export_${new Date().toISOString().split('T')[0]}.${format}`;
+    document.body.appendChild(a);
     a.click();
-  }, [transactions, pushNotification]);
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    pushNotification({ title: 'Sucesso', message: `Arquivo ${format.toUpperCase()} gerado.`, type: 'success', category: 'system' });
+  }, [transactions, user, isDemo, pushNotification]);
 
   const resetData = useCallback(async () => {
     if (!user) return;
@@ -553,28 +583,13 @@ export const TransactionsProvider: React.FC<{ children: ReactNode }> = ({ childr
 
     setIsDataLoading(true);
     try {
-      // 1. Delete all user data from Supabase
-      // Note: RLS policies ensure we only delete our own data
-      await Promise.all([
-        supabase.from('transactions').delete().eq('user_id', user.id),
-        supabase.from('credit_cards').delete().eq('user_id', user.id),
-        supabase.from('financial_goals').delete().eq('user_id', user.id),
-        supabase.from('debts').delete().eq('user_id', user.id),
-        supabase.from('ai_rules').delete().eq('user_id', user.id),
-        supabase.from('custom_categories').delete().eq('user_id', user.id),
-        supabase.from('xp_history').delete().eq('user_id', user.id),
-        supabase.from('user_achievements').delete().eq('user_id', user.id),
-        supabase.from('weekly_challenges').delete().eq('user_id', user.id),
-        supabase.from('streaks').delete().eq('user_id', user.id)
-      ]);
+      // 1. Delete all user data via Atomic SQL Procedure
+      const { error } = await supabase.rpc('reset_user_data');
 
-      // 2. Reset Profile Stats (keep account)
-      await supabase.from('profiles').update({
-        xp: 0,
-        level: 1,
-        main_goal: null,
-        current_situation: null
-      }).eq('user_id', user.id);
+      if (error) throw error;
+
+      // 2. Profile Stats are already reset by the RPC
+      // (No need for client-side update)
 
       // 3. Clear Local State
       setTransactions([]);

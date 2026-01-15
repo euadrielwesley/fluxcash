@@ -20,7 +20,7 @@ import AnalyticsManager from './components/AnalyticsManager';
 import ToastContainer from './components/ToastContainer';
 import NotificationPanel from './components/NotificationPanel';
 import ThemeToggle from './components/ThemeToggle';
-import LoginPage from './components/LoginPage';
+
 import ErrorBoundary from './components/ErrorBoundary';
 import { Transaction, ViewType, Story } from './types';
 import InstallPromptBanner from './components/InstallPromptBanner';
@@ -42,6 +42,7 @@ const OnboardingTour = lazy(() => import('./components/OnboardingTour'));
 const CashFlowChart = lazy(() => import('./components/CashFlowChart'));
 const WeeklyBurnChart = lazy(() => import('./components/WeeklyBurnChart'));
 const TopCategories = lazy(() => import('./components/TopCategories'));
+const LoginPage = lazy(() => import('./components/LoginPage'));
 
 
 // --- STORY VIEWER ---

@@ -587,6 +587,16 @@ const AppearanceSection = () => {
           </div>
         ))}
       </div>
+
+      <Card className="mt-6">
+        <SettingRow
+          icon="skip_next"
+          label="Pular Introdução"
+          desc="Não mostrar o tour de boas-vindas ao iniciar."
+        >
+          <OnboardingToggle />
+        </SettingRow>
+      </Card>
     </>
   );
 };
@@ -736,6 +746,53 @@ const SupportSection = () => {
   );
 };
 
+const BiometricsToggle = () => {
+  const [enabled, setEnabled] = useState(() => localStorage.getItem('flux_biometrics') === 'true');
+  const { pushNotification } = useNotification();
+
+  const toggle = () => {
+    const newState = !enabled;
+    setEnabled(newState);
+    localStorage.setItem('flux_biometrics', String(newState));
+    pushNotification({
+      title: newState ? 'Biometria Ativada' : 'Biometria Desativada',
+      message: newState ? 'Sua próxima entrada exigirá confirmação.' : 'Segurança biométrica removida.',
+      type: newState ? 'success' : 'warning',
+      category: 'system'
+    });
+  };
+
+  return <Switch checked={enabled} onChange={toggle} />;
+};
+
+const OnboardingToggle = () => {
+  const { userProfile, updateProfile } = useTransactions();
+  const { pushNotification } = useNotification();
+
+  // "Skipped" means hasOnboarding is TRUE (already seen)
+  // "Not Skipped" means hasOnboarding is FALSE (will see again)
+  const isSkipping = userProfile.hasOnboarding;
+
+  const toggle = () => {
+    const newVal = !isSkipping;
+
+    // Optimistic UI update handled by context
+    updateProfile({ hasOnboarding: newVal });
+
+    // Redundant local sync
+    localStorage.setItem('flux_onboarding_seen', String(newVal));
+
+    pushNotification({
+      title: newVal ? 'Introdução Desativada' : 'Introdução Ativada',
+      message: newVal ? 'Salvo na nuvem: O tour não será exibido.' : 'Salvo na nuvem: O tour aparecerá no próximo login.',
+      type: 'success',
+      category: 'system'
+    });
+  };
+
+  return <Switch checked={isSkipping} onChange={toggle} />;
+};
+
 const DataSection = () => {
   const { exportData, resetData } = useTransactions();
   const { user } = useAuth();
@@ -834,7 +891,7 @@ const DataSection = () => {
           label="Biometria / FaceID"
           desc="Exigir autenticação ao abrir o aplicativo."
         >
-          <Switch checked={true} />
+          <BiometricsToggle />
         </SettingRow>
         <SettingRow
           icon="devices"
@@ -842,8 +899,11 @@ const DataSection = () => {
           desc="Gerenciar dispositivos conectados."
         >
           <div className="flex flex-col items-end">
-            <span className="text-xs font-bold text-emerald-500">Este dispositivo</span>
-            <span className="text-[10px] text-zinc-400">Chrome • São Paulo, BR</span>
+            <span className="text-xs font-bold text-emerald-500 flex items-center gap-1">
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Online Agora
+            </span>
+            <span className="text-[10px] text-zinc-400 mt-0.5">{navigator.platform} • {Intl.DateTimeFormat().resolvedOptions().timeZone}</span>
           </div>
         </SettingRow>
       </Card>
